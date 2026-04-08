@@ -1,12 +1,22 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
+/* Tambahkan path file yang akan di-scan oleh Tailwind */
+@source "../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php";
+@source "../../storage/framework/views/*.php";
 @source "../**/*.blade.php";
 @source "../**/*.js";
-@source "../**/*.vue";
+@source "../**/*.vue";           /* Jika kamu pakai Vue/Inertia */
 
+/* Customisasi tambahan (opsional) */
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: 'Inter', system-ui, sans-serif;
+    /* Tambahkan warna custom, font, dll di sini */
+}
+
+/* Custom CSS kamu */
+.hero-bg {
+    background-image: linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), 
+                      url('https://source.unsplash.com/random/1920x1080/?indonesia-market');
+    background-size: cover;
+    background-position: center;
 }
