@@ -20,9 +20,6 @@
                 <a href="#produk" class="rounded-full bg-amber-400 px-7 py-3 font-semibold text-slate-900 hover:bg-amber-300">
                     Jelajahi Produk
                 </a>
-                <a href="#cta" class="rounded-full border border-white px-7 py-3 font-semibold hover:bg-white hover:text-slate-900">
-                    Gabung Jadi Penjual
-                </a>
             </div>
             <div class="mt-10 grid max-w-2xl grid-cols-2 gap-4 text-sm md:grid-cols-3">
                 <div class="rounded-xl bg-white/15 p-3">10.000+ UMKM Aktif</div>
@@ -99,13 +96,4 @@
     </div>
 </section>
 
-<section id="cta" class="bg-slate-900 py-16 text-white">
-    <div class="mx-auto w-full max-w-3xl px-6 text-center">
-        <h2 class="text-3xl font-bold md:text-4xl">Punya Produk UMKM?</h2>
-        <p class="mt-3 text-slate-200">Daftar sekarang dan mulai jualan ke lebih banyak pelanggan secara online.</p>
-        <a href="#" class="mt-8 inline-block rounded-full bg-amber-400 px-8 py-3 font-bold text-slate-900 hover:bg-amber-300">
-            Daftar Sebagai Penjual
-        </a>
-    </div>
-</section>
 @endsection
