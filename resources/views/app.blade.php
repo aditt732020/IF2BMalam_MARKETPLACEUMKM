@@ -13,7 +13,7 @@
     @yield('content')
     
     @include('footer')
-    
+    iajdiohohdoh
     @stack('scripts')
 </body>
 </html>
