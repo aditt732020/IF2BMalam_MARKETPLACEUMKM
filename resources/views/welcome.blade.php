@@ -10,7 +10,7 @@
                 Platform Digital untuk UMKM Indonesia
             </p>
             <h1 class="text-4xl font-extrabold leading-tight md:text-6xl">
-                Belanja Produk Lokal, Bantu UMKM Naik Kelas jembuttt
+                Belanja Produk Lokal, Bantu UMKM Naik Kelas jembuttt bakarrr
             </h1>
             <p class="mt-5 text-lg text-slate-100 md:text-xl">
                 Temukan produk berkualitas langsung dari pelaku UMKM terpercaya di seluruh Indonesia.
