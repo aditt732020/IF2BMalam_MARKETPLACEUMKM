@@ -10,11 +10,11 @@
                 Platform Digital untuk UMKM Indonesia
             </p>
             <h1 class="text-4xl font-extrabold leading-tight md:text-6xl">
-                Belanja Produk Lokal, Bantu UMKM Naik Kelas jembuttt bakarrr
+                Belanja Produk Lokal, Bantu UMKM Naik Kelas
             </h1>
             <p class="mt-5 text-lg text-slate-100 md:text-xl">
                 Temukan produk berkualitas langsung dari pelaku UMKM terpercaya di seluruh Indonesia.
-                Dari kuliner, fesyen, kerajinan, hingga kebutuhan rumah tangga.
+                Dari kuliner, fesyen, kerajinan, hingga kebutuhan rumah tangga. MEMEKKKK
             </p>
             <div class="mt-8 flex flex-wrap gap-4">
                 <a href="#produk" class="rounded-full bg-amber-400 px-7 py-3 font-semibold text-slate-900 hover:bg-amber-300">
