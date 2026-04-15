@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - KopiNusantara</title>
+    <title>Daftar - KopiNusantara</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -17,7 +17,7 @@
         <div class="max-w-6xl w-full bg-[#f9f6f2] rounded-2xl overflow-hidden">
             <div class="flex flex-col lg:flex-row">
                 
-                <!-- Sisi Kiri - Hero Section -->
+                <!-- Sisi Kiri - Hero Section (sama seperti login) -->
                 <div class="flex-1 bg-gradient-to-br from-[#5a4030] to-[#3a2010] p-8 lg:p-12 rounded-2xl lg:rounded-r-none relative overflow-hidden">
                     <!-- Background pattern -->
                     <div class="absolute top-0 right-0 w-64 h-64 bg-[#c97e3a]/10 rounded-full blur-3xl"></div>
@@ -61,32 +61,32 @@
                     
                     <!-- Footer -->
                     <p class="text-[#a08060] text-xs absolute bottom-8 left-8 lg:left-12">
-                        © 2025 KopiNusantara · Mendukung UMKM Indonesia
+                        © 2025 KopiNusantara - Mendukung UMKM Indonesia
                     </p>
                 </div>
                 
-                <!-- Sisi Kanan - Form Login -->
+                <!-- Sisi Kanan - Form Register -->
                 <div class="flex-1 p-8 lg:p-12">
                     <!-- Toggle Buttons -->
                     <div class="flex gap-4 mb-8">
-                        <a href="{{ route('home') }}" class="text-[#3a2010] font-semibold border-b-2 border-[#c97e3a] pb-2">Masuk</a>
-                        <a href="{{ route('register') }}" class="text-[#9a8070] pb-2 hover:text-[#3a2010] transition">Daftar</a>
+                        <a href="{{ route('login') }}" class="text-[#9a8070] pb-2 hover:text-[#3a2010] transition">Masuk</a>
+                        <a href="#" class="text-[#3a2010] font-semibold border-b-2 border-[#c97e3a] pb-2">Daftar</a>
                     </div>
                     
-                    <!-- Form Login -->
-                    <form method="POST" action="{{ route('login') }}" class="space-y-6">
+                    <!-- Form Register -->
+                    <form method="POST" action="{{ route('register') }}" class="space-y-5">
                         @csrf
                         
                         <div>
-                            <h2 class="text-[#3a2010] text-2xl font-bold mb-2">Selamat datang kembali</h2>
-                            <p class="text-[#9a8070] text-sm">Masuk untuk melanjutkan belanja kopi pilihan</p>
+                            <h2 class="text-[#3a2010] text-2xl font-bold mb-2">Selamat datang!</h2>
+                            <p class="text-[#9a8070] text-sm">Daftar untuk melanjutkan belanja kopi pilihan</p>
                         </div>
                         
                         <!-- Email Input -->
                         <div>
                             <label class="block text-[#7a6050] text-sm mb-2">Email atau nomor HP</label>
                             <input type="email" name="email" value="{{ old('email') }}" 
-                                   class="w-full px-4 py-3 border-2 border-[#c97e3a] rounded-lg focus:outline-none focus:border-[#a06020] transition"
+                                   class="w-full px-4 py-3 border-2 border-[#c97e3a] rounded-lg focus:outline-none focus:border-[#a06020] transition @error('email') border-red-500 @enderror"
                                    placeholder="Masukkan email  ">
                             @error('email')
                                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -98,8 +98,8 @@
                             <label class="block text-[#7a6050] text-sm mb-2">Kata sandi</label>
                             <div class="relative">
                                 <input type="password" name="password" id="password"
-                                       class="w-full px-4 py-3 border border-[#e0d8cc] rounded-lg focus:outline-none focus:border-[#c97e3a] transition"
-                                       placeholder="••••••••">
+                                       class="w-full px-4 py-3 border border-[#e0d8cc] rounded-lg focus:outline-none focus:border-[#c97e3a] transition @error('password') border-red-500 @enderror"
+                                       placeholder="*********">
                                 <button type="button" id="togglePassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-[#9a8070] hover:text-[#3a2010]">
                                     👁️
                                 </button>
@@ -109,17 +109,42 @@
                             @enderror
                         </div>
                         
+                        <!-- Confirm Password Input -->
+                        <div>
+                            <label class="block text-[#7a6050] text-sm mb-2">Ulangi Kata sandi</label>
+                            <div class="relative">
+                                <input type="password" name="password_confirmation" id="password_confirmation"
+                                       class="w-full px-4 py-3 border border-[#e0d8cc] rounded-lg focus:outline-none focus:border-[#c97e3a] transition"
+                                       placeholder="*********">
+                                <button type="button" id="toggleConfirmPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-[#9a8070] hover:text-[#3a2010]">
+                                    👁️
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Name Input (opsional - tambahkan jika perlu) -->
+                        <div>
+                            <label class="block text-[#7a6050] text-sm mb-2">Nama lengkap</label>
+                            <input type="text" name="name" value="{{ old('name') }}" 
+                                   class="w-full px-4 py-3 border border-[#e0d8cc] rounded-lg focus:outline-none focus:border-[#c97e3a] transition"
+                                   placeholder="">
+                            @error('name')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        
                         <!-- Submit Button -->
                         <button type="submit" 
-                                class="w-full bg-[#c97e3a] hover:bg-[#a06020] text-white font-semibold py-3 rounded-lg transition duration-200">
-                            Masuk
+                                class="w-full bg-[#c97e3a] hover:bg-[#a06020] text-white font-semibold py-3 rounded-lg transition duration-200 mt-4">
+                            Daftar
                         </button>
                         
-                        <!-- Register Link -->
+                        <!-- Login Link -->
                         <p class="text-center text-[#9a8070] text-sm">
-                            Belum punya akun? 
-                            <a href="{{ route('register') }}" class="text-[#c97e3a] hover:underline font-semibold">Daftar sekarang</a>
-                        </p>                    </form>
+                            Sudah punya akun? 
+                            <a href="{{ route('login') }}" class="text-[#c97e3a] hover:underline font-semibold">Masuk sekarang</a>
+                        </p>
+                    </form>
                 </div>
                 
             </div>
@@ -128,13 +153,26 @@
     
     <!-- Toggle Password Script -->
     <script>
+        // Toggle untuk password
         const togglePassword = document.querySelector('#togglePassword');
         const password = document.querySelector('#password');
         
-        if (togglePassword) {
+        if (togglePassword && password) {
             togglePassword.addEventListener('click', function() {
                 const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
                 password.setAttribute('type', type);
+                this.textContent = type === 'password' ? '👁️' : '👁️‍🗨️';
+            });
+        }
+        
+        // Toggle untuk confirm password
+        const toggleConfirmPassword = document.querySelector('#toggleConfirmPassword');
+        const confirmPassword = document.querySelector('#password_confirmation');
+        
+        if (toggleConfirmPassword && confirmPassword) {
+            toggleConfirmPassword.addEventListener('click', function() {
+                const type = confirmPassword.getAttribute('type') === 'password' ? 'text' : 'password';
+                confirmPassword.setAttribute('type', type);
                 this.textContent = type === 'password' ? '👁️' : '👁️‍🗨️';
             });
         }

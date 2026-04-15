@@ -1,32 +1,28 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\HomeController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\HomeController;
 
-Route::get('/', [HomeController::class, 'index']);
-Route::get('/contact', [HomeController::class, 'contact']);
+// ==================== GUEST ROUTES (belum login) ====================
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
-    Route::post('/login', [AuthController::class, 'login'])->name('login.attempt');
-});
-Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
-
-Route::get('/welcome', function () {
-    return view('welcome');
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
+    Route::post('/register', [AuthController::class, 'register']);
 });
 
-Route::get('/user/{id}', function ($id) {
-    return "User ID: " . $id;
+// ==================== AUTH ROUTES (sudah login) ====================
+Route::middleware('auth')->group(function () {
+    Route::get('/dashboard', [HomeController::class, 'index'])->name('dashboard');
+    Route::get('/home', [HomeController::class, 'index'])->name('home');
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });
 
-Route::prefix('admin')->group(function () {
-    Route::get('/dashboard', function () {
-        return "Admin Dashboard";
-    });
-    Route::get('/users', function () {
-        return "Admin Users";
-    });
+// Redirect root ke login atau dashboard
+Route::get('/', function () {
+    if (auth()->check()) {
+        return redirect()->route('dashboard');
+    }
+    return redirect()->route('login');
 });
-
-Route::get('/listbarang/{id}/{nama}', [App\Http\Controllers\ListBarangController::class, 'tampilkan']);
