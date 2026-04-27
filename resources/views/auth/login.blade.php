@@ -61,7 +61,7 @@
                     
                     <!-- Footer -->
                     <p class="text-[#a08060] text-xs absolute bottom-8 left-8 lg:left-12">
-                        © 2025 KopiNusantara · Mendukung UMKM Indonesia
+                        © 2026 KopiNusantara · Mendukung UMKM Indonesia
                     </p>
                 </div>
                 
