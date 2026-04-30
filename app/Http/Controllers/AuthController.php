@@ -52,6 +52,7 @@ class AuthController extends Controller
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
+            'role' => 'buyer',
         ]);
 
         // Login otomatis setelah register

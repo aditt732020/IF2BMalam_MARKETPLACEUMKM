@@ -10,6 +10,10 @@ class HomeController extends Controller
 {
     public function index(Request $request)
     {
+        if (auth()->check() && auth()->user()->role === 'admin') {
+            return redirect()->route('admin.dashboard');
+        }
+
         // 1. Logika untuk mengambil data produk
         // Jika Anda sudah memiliki model Product, gunakan ini:
         // $query = Product::query();
