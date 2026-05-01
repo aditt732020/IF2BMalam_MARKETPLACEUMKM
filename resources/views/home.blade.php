@@ -106,107 +106,30 @@
             </div>
             
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div class="bg-white rounded-xl overflow-hidden shadow-sm product-card cursor-pointer group" 
-                     x-show="'arabika gayo premium'.includes(searchQuery.toLowerCase())"
-                     @click="isPaymentOpen = true; selectedProduct = 'Arabika Gayo Premium'; selectedPrice = 'Rp85.000'">
-                    <div class="relative h-48 bg-gradient-to-br from-[#8B6914] to-[#5a4030] flex items-center justify-center">
-                        <span class="text-6xl">☕</span>
-                        <span class="absolute top-2 left-2 bg-[#c97e3a] text-white text-xs px-2 py-1 rounded">Terlaris</span>
-                        <div class="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
-                            <span class="bg-white text-[#3a2010] px-4 py-2 rounded-full font-bold shadow-lg">Beli</span>
+                @forelse ($products as $product)
+                    <div class="bg-white rounded-xl overflow-hidden shadow-sm product-card cursor-pointer group"
+                         x-show="'{{ strtolower($product->name . ' ' . ($product->description ?? '')) }}'.includes(searchQuery.toLowerCase())"
+                         @click="isPaymentOpen = true; selectedProduct = '{{ e($product->name) }}'; selectedPrice = 'Rp{{ number_format($product->price, 0, ',', '.') }}'">
+                        <div class="relative h-48 bg-gradient-to-br from-[#8B6914] to-[#5a4030] flex items-center justify-center">
+                            <span class="text-6xl">☕</span>
+                            <div class="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                                <span class="bg-white text-[#3a2010] px-4 py-2 rounded-full font-bold shadow-lg">Beli</span>
+                            </div>
                         </div>
-                    </div>
-                    <div class="p-4">
-                        <h4 class="font-bold text-[#3a2010]">Arabika Gayo Premium</h4>
-                        <p class="text-[#9a8070] text-sm">Rumah Kopi Aceh</p>
-                        <div class="flex items-center justify-between mt-3">
-                            <span class="text-[#c97e3a] font-bold">Rp85.000</span>
-                            <div class="flex items-center gap-1">
-                                <svg class="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                                    <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
-                                </svg>
-                                <span class="text-sm text-[#9a8070]">4.8</span>
+                        <div class="p-4">
+                            <h4 class="font-bold text-[#3a2010]">{{ $product->name }}</h4>
+                            <p class="text-[#9a8070] text-sm">{{ \Illuminate\Support\Str::limit($product->description ?? 'Produk UMKM', 45) }}</p>
+                            <div class="flex items-center justify-between mt-3">
+                                <span class="text-[#c97e3a] font-bold">Rp{{ number_format($product->price, 0, ',', '.') }}</span>
+                                <span class="text-xs text-[#9a8070]">Stok: {{ $product->stock }}</span>
                             </div>
                         </div>
                     </div>
-                </div>
-                
-                <div class="bg-white rounded-xl overflow-hidden shadow-sm product-card cursor-pointer group"
-                     x-show="'robusta lampung'.includes(searchQuery.toLowerCase())"
-                     @click="isPaymentOpen = true; selectedProduct = 'Robusta Lampung'; selectedPrice = 'Rp65.000'">
-                    <div class="relative h-48 bg-gradient-to-br from-[#2d5016] to-[#1a3a0a] flex items-center justify-center">
-                        <span class="text-6xl">☕</span>
-                        <span class="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded">Promo</span>
-                        <div class="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
-                            <span class="bg-white text-[#3a2010] px-4 py-2 rounded-full font-bold shadow-lg">Beli</span>
-                        </div>
+                @empty
+                    <div class="col-span-full bg-white rounded-xl p-6 shadow-sm text-center text-[#9a8070]">
+                        Belum ada produk aktif dari admin.
                     </div>
-                    <div class="p-4">
-                        <h4 class="font-bold text-[#3a2010]">Robusta Lampung</h4>
-                        <p class="text-[#9a8070] text-sm">Kopi Sidera</p>
-                        <div class="flex items-center justify-between mt-3">
-                            <div>
-                                <span class="text-[#c97e3a] font-bold">Rp65.000</span>
-                                <span class="text-[#9a8070] text-xs line-through ml-2">Rp85.000</span>
-                            </div>
-                            <div class="flex items-center gap-1">
-                                <svg class="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                                    <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
-                                </svg>
-                                <span class="text-sm text-[#9a8070]">4.9</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white rounded-xl overflow-hidden shadow-sm product-card cursor-pointer group"
-                     x-show="'kintamani natural'.includes(searchQuery.toLowerCase())"
-                     @click="isPaymentOpen = true; selectedProduct = 'Kintamani Natural'; selectedPrice = 'Rp95.000'">
-                    <div class="relative h-48 bg-gradient-to-br from-[#1a4a5a] to-[#0a2a3a] flex items-center justify-center">
-                        <span class="text-6xl">☕</span>
-                        <span class="absolute top-2 left-2 bg-green-500 text-white text-xs px-2 py-1 rounded">Baru</span>
-                        <div class="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
-                            <span class="bg-white text-[#3a2010] px-4 py-2 rounded-full font-bold shadow-lg">Beli</span>
-                        </div>
-                    </div>
-                    <div class="p-4">
-                        <h4 class="font-bold text-[#3a2010]">Kintamani Natural</h4>
-                        <p class="text-[#9a8070] text-sm">Bali Coffee Co.</p>
-                        <div class="flex items-center justify-between mt-3">
-                            <span class="text-[#c97e3a] font-bold">Rp95.000</span>
-                            <div class="flex items-center gap-1">
-                                <svg class="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                                    <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
-                                </svg>
-                                <span class="text-sm text-[#9a8070]">4.7</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white rounded-xl overflow-hidden shadow-sm product-card cursor-pointer group"
-                     x-show="'flores bajawa'.includes(searchQuery.toLowerCase())"
-                     @click="isPaymentOpen = true; selectedProduct = 'Flores Bajawa'; selectedPrice = 'Rp78.000'">
-                    <div class="relative h-48 bg-gradient-to-br from-[#8B4513] to-[#5a2a0a] flex items-center justify-center">
-                        <span class="text-6xl">☕</span>
-                        <div class="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
-                            <span class="bg-white text-[#3a2010] px-4 py-2 rounded-full font-bold shadow-lg">Beli</span>
-                        </div>
-                    </div>
-                    <div class="p-4">
-                        <h4 class="font-bold text-[#3a2010]">Flores Bajawa</h4>
-                        <p class="text-[#9a8070] text-sm">Kopi Ende NTT</p>
-                        <div class="flex items-center justify-between mt-3">
-                            <span class="text-[#c97e3a] font-bold">Rp78.000</span>
-                            <div class="flex items-center gap-1">
-                                <svg class="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                                    <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
-                                </svg>
-                                <span class="text-sm text-[#9a8070]">4.6</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                @endforelse
             </div>
         </div>
     </section>
