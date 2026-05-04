@@ -40,14 +40,14 @@ class AuthController extends Controller
 
     public function register(Request $request)
     {
-        // Validasi input
+        // 1. Validasi input
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6|confirmed',
         ]);
 
-        // Buat user baru
+        // 2. Buat user baru ke database
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
@@ -55,11 +55,9 @@ class AuthController extends Controller
             'role' => 'buyer',
         ]);
 
-        // Login otomatis setelah register
-        Auth::login($user);
-
-        // Redirect ke dashboard
-        return redirect()->intended('/dashboard');
+        // 3. Redirect ke halaman login (Tanpa login otomatis)
+        // Kita gunakan flash message 'success' agar user tahu pendaftaran berhasil
+        return redirect()->route('login')->with('success', 'Akun berhasil dibuat! Silakan masuk.');
     }
 
     // ==================== LOGOUT ====================

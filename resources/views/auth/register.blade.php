@@ -7,9 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
+        body { font-family: 'Inter', sans-serif; }
     </style>
 </head>
 <body class="bg-[#f9f6f2]">
@@ -17,9 +15,8 @@
         <div class="max-w-6xl w-full bg-[#f9f6f2] rounded-2xl overflow-hidden">
             <div class="flex flex-col lg:flex-row">
                 
-                <!-- Sisi Kiri - Hero Section (sama seperti login) -->
+                <!-- Sisi Kiri - Hero Section -->
                 <div class="flex-1 bg-gradient-to-br from-[#5a4030] to-[#3a2010] p-8 lg:p-12 rounded-2xl lg:rounded-r-none relative overflow-hidden">
-                    <!-- Background pattern -->
                     <div class="absolute top-0 right-0 w-64 h-64 bg-[#c97e3a]/10 rounded-full blur-3xl"></div>
                     
                     <!-- Logo -->
@@ -59,7 +56,6 @@
                         </div>
                     </div>
                     
-                    <!-- Footer -->
                     <p class="text-[#a08060] text-xs absolute bottom-8 left-8 lg:left-12">
                         © 2026 KopiNusantara - Mendukung UMKM Indonesia
                     </p>
@@ -82,12 +78,23 @@
                             <p class="text-[#9a8070] text-sm">Daftar untuk melanjutkan belanja kopi pilihan</p>
                         </div>
                         
+                        <!-- Name Input -->
+                        <div>
+                            <label class="block text-[#7a6050] text-sm mb-2">Nama lengkap</label>
+                            <input type="text" name="name" value="{{ old('name') }}" 
+                                   class="w-full px-4 py-3 border border-[#e0d8cc] rounded-lg focus:outline-none focus:border-[#c97e3a] transition @error('name') border-red-500 @enderror"
+                                   placeholder="Nama Anda">
+                            @error('name')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
                         <!-- Email Input -->
                         <div>
-                            <label class="block text-[#7a6050] text-sm mb-2">Email atau nomor HP</label>
+                            <label class="block text-[#7a6050] text-sm mb-2">Email</label>
                             <input type="email" name="email" value="{{ old('email') }}" 
-                                   class="w-full px-4 py-3 border-2 border-[#c97e3a] rounded-lg focus:outline-none focus:border-[#a06020] transition @error('email') border-red-500 @enderror"
-                                   placeholder="Masukkan email  ">
+                                   class="w-full px-4 py-3 border border-[#e0d8cc] rounded-lg focus:outline-none focus:border-[#c97e3a] transition @error('email') border-red-500 @enderror"
+                                   placeholder="nama@email.com">
                             @error('email')
                                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                             @enderror
@@ -122,21 +129,10 @@
                             </div>
                         </div>
                         
-                        <!-- Name Input (opsional - tambahkan jika perlu) -->
-                        <div>
-                            <label class="block text-[#7a6050] text-sm mb-2">Nama lengkap</label>
-                            <input type="text" name="name" value="{{ old('name') }}" 
-                                   class="w-full px-4 py-3 border border-[#e0d8cc] rounded-lg focus:outline-none focus:border-[#c97e3a] transition"
-                                   placeholder="">
-                            @error('name')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-                        
                         <!-- Submit Button -->
-                        <button type="submit" 
+                        <button type="submit"
                                 class="w-full bg-[#c97e3a] hover:bg-[#a06020] text-white font-semibold py-3 rounded-lg transition duration-200 mt-4">
-                            Daftar
+                            Daftar Sekarang
                         </button>
                         
                         <!-- Login Link -->
@@ -146,36 +142,26 @@
                         </p>
                     </form>
                 </div>
-                
             </div>
         </div>
     </div>
     
-    <!-- Toggle Password Script -->
     <script>
-        // Toggle untuk password
-        const togglePassword = document.querySelector('#togglePassword');
-        const password = document.querySelector('#password');
-        
-        if (togglePassword && password) {
-            togglePassword.addEventListener('click', function() {
-                const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
-                password.setAttribute('type', type);
-                this.textContent = type === 'password' ? '👁️' : '👁️‍🗨️';
-            });
+        // Fungsi reusable untuk toggle password
+        function setupPasswordToggle(buttonId, inputId) {
+            const button = document.querySelector(buttonId);
+            const input = document.querySelector(inputId);
+            if (button && input) {
+                button.addEventListener('click', function() {
+                    const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+                    input.setAttribute('type', type);
+                    this.textContent = type === 'password' ? '👁️' : '👁️‍🗨️';
+                });
+            }
         }
-        
-        // Toggle untuk confirm password
-        const toggleConfirmPassword = document.querySelector('#toggleConfirmPassword');
-        const confirmPassword = document.querySelector('#password_confirmation');
-        
-        if (toggleConfirmPassword && confirmPassword) {
-            toggleConfirmPassword.addEventListener('click', function() {
-                const type = confirmPassword.getAttribute('type') === 'password' ? 'text' : 'password';
-                confirmPassword.setAttribute('type', type);
-                this.textContent = type === 'password' ? '👁️' : '👁️‍🗨️';
-            });
-        }
+
+        setupPasswordToggle('#togglePassword', '#password');
+        setupPasswordToggle('#toggleConfirmPassword', '#password_confirmation');
     </script>
 </body>
 </html>
