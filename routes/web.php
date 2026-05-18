@@ -8,7 +8,11 @@ use App\Http\Controllers\Admin\SellerController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\HomeController;
 
-// ==================== GUEST ROUTES (belum login) ====================
+// ==================== PUBLIC / GUEST ROUTES ====================
+// Halaman Utama/Landing Page sekarang bisa diakses siapa saja (Guest & Auth)
+Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/home', [HomeController::class, 'index']);
+
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
@@ -16,13 +20,16 @@ Route::middleware('guest')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
 });
 
-// ==================== AUTH ROUTES (sudah login) ====================
+// ==================== AUTH ROUTES (Harus Login) ====================
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [HomeController::class, 'index'])->name('dashboard');
-    Route::get('/home', [HomeController::class, 'index'])->name('home');
-    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    Route::get('/logout', [AuthController::class, 'logout'])->name('logout'); // Sudah diubah ke GET
+    
+    // Taruh proses checkout/pembayaran di sini agar terlindungi middleware auth
+    Route::post('/checkout', [HomeController::class, 'processCheckout'])->name('checkout');
 });
 
+// ==================== ADMIN ROUTES ====================
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/products', [ProductController::class, 'index'])->name('products');
@@ -39,12 +46,4 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/sellers', [SellerController::class, 'store'])->name('sellers.store');
     Route::put('/sellers/{seller}', [SellerController::class, 'update'])->name('sellers.update');
     Route::delete('/sellers/{seller}', [SellerController::class, 'destroy'])->name('sellers.destroy');
-});
-
-// Redirect root ke login atau dashboard
-Route::get('/', function () {
-    if (auth()->check()) {
-        return redirect()->route('dashboard');
-    }
-    return redirect()->route('login');
 });
