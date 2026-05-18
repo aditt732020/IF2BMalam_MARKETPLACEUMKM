@@ -18,7 +18,6 @@
                 <a href="{{ route('admin.dashboard') }}" class="block rounded-lg px-4 py-3 hover:bg-white/10">Dashboard</a>
                 <a href="{{ route('admin.products') }}" class="block rounded-lg px-4 py-3 hover:bg-white/10">Produk</a>
                 <a href="{{ route('admin.orders') }}" class="block rounded-lg px-4 py-3 hover:bg-white/10">Pesanan</a>
-                <a href="{{ route('admin.sellers') }}" class="block rounded-lg px-4 py-3 hover:bg-white/10">Penjual</a>
             </nav>
         </aside>
 
