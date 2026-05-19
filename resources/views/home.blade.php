@@ -91,7 +91,7 @@
                                 Edit Profil
                             </a>
 
-                            <a href="{{ route('logout') }}" @click="alert('Anda telah berhasil keluar (Logout).'); isProfileDropdownOpen = false" class="block px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition font-medium border-t border-gray-50">
+                            <a href="{{ route('logout') }}" @click="alert('Anda telah berhasil keluar.'); isProfileDropdownOpen = false" class="block px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition font-medium border-t border-gray-50">
                                 Logout
                             </a>
                         </div>
