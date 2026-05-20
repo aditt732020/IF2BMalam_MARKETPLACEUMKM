@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\BuyerController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProductController;
@@ -27,6 +28,7 @@ Route::middleware('auth')->group(function () {
     
     // Taruh proses checkout/pembayaran di sini agar terlindungi middleware auth
     Route::post('/checkout', [HomeController::class, 'processCheckout'])->name('checkout');
+    Route::post('/profile', [HomeController::class, 'updateProfile'])->name('profile.update');
 });
 
 // ==================== ADMIN ROUTES ====================
@@ -38,7 +40,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
 
     Route::get('/orders', [OrderController::class, 'index'])->name('orders');
-    Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
     Route::put('/orders/{order}', [OrderController::class, 'update'])->name('orders.update');
     Route::delete('/orders/{order}', [OrderController::class, 'destroy'])->name('orders.destroy');
 
@@ -46,6 +47,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/sellers', [SellerController::class, 'store'])->name('sellers.store');
     Route::put('/sellers/{seller}', [SellerController::class, 'update'])->name('sellers.update');
     Route::delete('/sellers/{seller}', [SellerController::class, 'destroy'])->name('sellers.destroy');
+
+    Route::get('/buyers', [BuyerController::class, 'index'])->name('buyers');
+    Route::put('/buyers/{buyer}', [BuyerController::class, 'update'])->name('buyers.update');
+    Route::delete('/buyers/{buyer}', [BuyerController::class, 'destroy'])->name('buyers.destroy');
 });
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');

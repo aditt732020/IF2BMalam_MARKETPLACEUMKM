@@ -12,29 +12,92 @@
         [x-cloak] { display: none !important; }
     </style>
 </head>
-<body class="bg-[#fdf9f4]" x-data="{ 
+@php
+    $firstProduct = $products->first();
+    $initProduct = $firstProduct ? [
+        'id' => $firstProduct->id,
+        'name' => $firstProduct->name,
+        'price' => (int) $firstProduct->price,
+        'stock' => (int) $firstProduct->stock,
+        'description' => $firstProduct->description ?? '',
+        'image_url' => $firstProduct->resolveImageUrl(),
+        'shop_name' => $firstProduct->shop_name ?? 'UMKM Lokal',
+        'category' => $firstProduct->category,
+        'category_label' => $firstProduct->category_label,
+        'category_badge' => $firstProduct->category_style['badge'],
+    ] : null;
+@endphp
+<body class="bg-[#fdf9f4]" x-data="{
     page: 'home',
-    isPaymentOpen: false, 
+    isPaymentOpen: false,
     isLoading: false,
-    selectedProduct: 'Arabika Gayo Premium', 
-    selectedPrice: 85000,
-    selectedDescription: 'Arabika Gayo dari ketinggian 1.400 mdpl. Proses natural sun-dry menghasilkan cita rasa fruity dengan body sedang dan after taste dark chocolate yang khas. Cocok untuk metode pour over dan V60.',
-    selectedImg: 'https://images.unsplash.com/photo-1507133750040-4a8f57021571?auto=format&fit=crop&w=600&q=80',
+    products: @js($productsJson),
+    categoryList: @js($categories),
+    categoryStyles: @js($categoryStyles),
+    selectedCategory: '{{ $activeCategory }}',
+    searchQuery: '{{ request('search', '') }}',
+    selectedId: {{ $initProduct ? $initProduct['id'] : 'null' }},
+    selectedProduct: @js($initProduct ? $initProduct['name'] : ''),
+    selectedPrice: {{ $initProduct['price'] ?? 0 }},
+    selectedDescription: @js($initProduct ? $initProduct['description'] : ''),
+    selectedImg: @js($initProduct ? $initProduct['image_url'] : ''),
+    selectedShop: @js($initProduct ? $initProduct['shop_name'] : ''),
+    selectedCategoryKey: @js($initProduct ? $initProduct['category'] : ''),
+    selectedCategoryLabel: @js($initProduct ? $initProduct['category_label'] : ''),
+    selectedCategoryBadge: @js($initProduct ? $initProduct['category_badge'] : ''),
+    selectedStock: {{ $initProduct['stock'] ?? 0 }},
     qty: 1,
     detailTab: 'deskripsi',
     paymentMethod: 'QRIS',
     selectedBank: 'BCA',
-    searchQuery: '',
     voucherCode: '',
     cartChecked: true,
     isProfileDropdownOpen: false,
-    
-    /* State data user untuk Edit Profil */
     userProfile: {
-        nama: '{{ auth()->user()->nama ?? "Budi Santoso" }}',
-        email: '{{ auth()->user()->email ?? "budi.santoso@email.com" }}',
-        telepon: '{{ auth()->user()->telepon ?? "0812-3456-7890" }}',
-        alamat: '{{ auth()->user()->alamat ?? "Jl. Sudirman No. 45, Kel. Menteng, Jakarta Pusat, DKI Jakarta 10310" }}'
+        nama: @js($user?->name ?? ''),
+        email: @js($user?->email ?? ''),
+        telepon: @js($user?->phone ?? ''),
+        alamat: @js($user?->address ?? '')
+    },
+    selectProduct(p) {
+        this.selectedId = p.id;
+        this.selectedProduct = p.name;
+        this.selectedPrice = p.price;
+        this.selectedDescription = p.description;
+        this.selectedImg = p.image_url;
+        this.selectedShop = p.shop_name;
+        this.selectedCategoryKey = p.category;
+        this.selectedCategoryLabel = p.category_label;
+        this.selectedCategoryBadge = p.category_badge;
+        this.selectedStock = p.stock;
+        this.qty = 1;
+        this.page = 'detail';
+    },
+    imageFallback(event, url) { event.target.src = url; },
+    getCategoryLabel(key) { return this.categoryList[key] || key; },
+    get productGroups() {
+        return Object.entries(this.categoryList).map(([key, label]) => ({
+            key,
+            label,
+            badge: this.categoryStyles[key]?.badge || 'bg-gray-100 text-gray-600 border border-gray-200',
+            items: this.filteredProducts.filter(p => p.category === key),
+        })).filter(g => g.items.length > 0);
+    },
+    get filteredProducts() {
+        const q = this.searchQuery.toLowerCase().trim();
+        return this.products.filter(p => {
+            const matchCat = !this.selectedCategory || p.category === this.selectedCategory;
+            const matchSearch = !q || p.name.toLowerCase().includes(q) || (p.shop_name && p.shop_name.toLowerCase().includes(q)) || (p.description && p.description.toLowerCase().includes(q));
+            return matchCat && matchSearch;
+        });
+    },
+    get cartCount() { return this.selectedId ? 1 : 0; },
+    shopInitials(name) { return (name || 'UM').substring(0, 2).toUpperCase(); },
+    submitCheckout() {
+        if (!this.selectedId || !@js(auth()->check())) return;
+        document.getElementById('checkout-product-id').value = this.selectedId;
+        document.getElementById('checkout-quantity').value = this.qty;
+        document.getElementById('checkout-form').submit();
     }
 }">
 
@@ -62,7 +125,7 @@
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
                     </svg>
-                    <span class="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">1</span>
+                    <span x-show="cartCount > 0" class="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold" x-text="cartCount"></span>
                 </div>
 
                 @auth
@@ -106,6 +169,25 @@
             </div>
         </div>
     </nav>
+
+    @if (session('success'))
+        <div class="max-w-7xl mx-auto px-6 pt-4">
+            <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{{ session('success') }}</div>
+        </div>
+    @endif
+    @if (isset($errors) && $errors->any())
+        <div class="max-w-7xl mx-auto px-6 pt-4">
+            <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                @foreach ($errors->all() as $error) <p>{{ $error }}</p> @endforeach
+            </div>
+        </div>
+    @endif
+
+    <form id="checkout-form" method="POST" action="{{ route('checkout') }}" class="hidden">
+        @csrf
+        <input type="hidden" name="product_id" id="checkout-product-id" value="">
+        <input type="hidden" name="quantity" id="checkout-quantity" value="1">
+    </form>
     
     <main x-show="page === 'home'">
         <section class="max-w-7xl mx-auto px-6 pt-10 pb-6">
@@ -126,14 +208,17 @@
         </section>
 
         <section class="max-w-7xl mx-auto px-6 py-4">
-            <div class="flex gap-3">
+            <form method="GET" action="{{ route('home') }}" class="flex gap-3">
                 <div class="flex-1">
-                    <input type="text" x-model="searchQuery" placeholder="Cari kopi, daerah asal, atau nama toko..." 
+                    <input type="text" name="search" x-model="searchQuery" value="{{ request('search') }}" placeholder="Cari kopi, daerah asal, atau nama toko..."
                            class="w-full px-4 py-3 bg-[#f3ece2] text-sm text-gray-700 placeholder-gray-400 rounded-lg focus:outline-none border border-transparent focus:border-[#c57d38]/30">
                 </div>
-                <button class="bg-[#f3ece2] hover:bg-[#ebd8bc] text-gray-600 px-6 py-3 rounded-lg text-sm font-medium transition">Filter</button>
-                <button class="bg-[#c57d38] hover:bg-[#a66528] text-white px-8 py-3 rounded-lg text-sm font-semibold transition">Cari</button>
-            </div>
+                @if (request('category'))
+                    <input type="hidden" name="category" value="{{ request('category') }}">
+                @endif
+                <a href="{{ route('home') }}" class="bg-[#f3ece2] hover:bg-[#ebd8bc] text-gray-600 px-6 py-3 rounded-lg text-sm font-medium transition flex items-center">Reset</a>
+                <button type="submit" class="bg-[#c57d38] hover:bg-[#a66528] text-white px-8 py-3 rounded-lg text-sm font-semibold transition">Cari</button>
+            </form>
         </section>
         
         <section class="max-w-7xl mx-auto px-6 py-6">
@@ -142,104 +227,111 @@
                 <a href="#" class="text-xs text-[#c57d38] font-medium hover:underline">Lihat semua</a>
             </div>
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-                <div class="bg-white border border-gray-100 rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer hover:shadow-sm transition">
-                    <div class="w-10 h-10 bg-[#dfb287]/20 text-[#be8146] rounded-xl mb-2 flex items-center justify-center font-bold text-xl"></div>
-                    <span class="text-xs text-gray-600 font-medium">Biji kopi</span>
-                </div>
-                <div class="bg-white border border-gray-100 rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer hover:shadow-sm transition">
-                    <div class="w-10 h-10 bg-[#70c9a5]/20 text-[#30976f] rounded-xl mb-2 flex items-center justify-center font-bold text-xl"></div>
-                    <span class="text-xs text-gray-600 font-medium">Kopi bubuk</span>
-                </div>
-                <div class="bg-white border border-gray-100 rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer hover:shadow-sm transition">
-                    <div class="w-10 h-10 bg-[#7cb0ec]/20 text-[#3d7ecb] rounded-xl mb-2 flex items-center justify-center font-bold text-xl"></div>
-                    <span class="text-xs text-gray-600 font-medium">Cold brew</span>
+                @php
+                    $catStyles = [
+                        'biji_kopi' => ['bg' => 'bg-[#dfb287]/20', 'text' => 'text-[#be8146]'],
+                        'kopi_bubuk' => ['bg' => 'bg-[#70c9a5]/20', 'text' => 'text-[#30976f]'],
+                        'cold_brew' => ['bg' => 'bg-[#7cb0ec]/20', 'text' => 'text-[#3d7ecb]'],
+                        'lainnya' => ['bg' => 'bg-gray-100', 'text' => 'text-gray-600'],
+                    ];
+                @endphp
+                <a href="{{ route('home', request()->only('search')) }}"
+                   class="bg-white border rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer hover:shadow-sm transition {{ !request('category') ? 'border-[#c57d38] ring-1 ring-[#c57d38]/30' : 'border-gray-100' }}">
+                    <div class="w-10 h-10 bg-[#f3ece2] text-[#c57d38] rounded-xl mb-2 flex items-center justify-center font-bold text-xs">All</div>
+                    <span class="text-xs text-gray-600 font-medium">Semua</span>
+                </a>
+                @foreach ($categories as $key => $label)
+                    @php $style = $catStyles[$key] ?? $catStyles['lainnya']; @endphp
+                    <a href="{{ route('home', ['category' => $key, 'search' => request('search')]) }}"
+                       class="bg-white border rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer hover:shadow-sm transition {{ request('category') === $key ? 'border-[#c57d38] ring-1 ring-[#c57d38]/30' : 'border-gray-100' }}">
+                        <div class="w-10 h-10 {{ $style['bg'] }} {{ $style['text'] }} rounded-xl mb-2 flex items-center justify-center font-bold text-lg">☕</div>
+                        <span class="text-xs text-gray-600 font-medium">{{ $label }}</span>
+                    </a>
+                @endforeach
             </div>
         </section>
 
         <section class="max-w-7xl mx-auto px-6 py-6">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="font-bold text-gray-800 text-base">Produk terlaris</h3>
-                <a href="#" class="text-xs text-[#c57d38] font-medium hover:underline">Lihat semua</a>
+                <div>
+                    <h3 class="font-bold text-gray-800 text-base">Produk UMKM Kopi</h3>
+                    <p class="text-xs text-gray-400 mt-0.5">{{ $products->count() }} produk tersedia dari database</p>
+                </div>
+                <span class="text-xs text-[#c57d38] font-medium" x-show="filteredProducts.length < products.length" x-text="filteredProducts.length + ' ditampilkan'"></span>
             </div>
             
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="bg-white rounded-xl overflow-hidden border border-gray-100 flex flex-col cursor-pointer hover:shadow-md transition"
-                     @click="page = 'detail'; selectedProduct = 'Arabika Gayo Premium'; selectedPrice = 85000; qty = 1; selectedImg = 'https://images.unsplash.com/photo-1507133750040-4a8f57021571?auto=format&fit=crop&w=600&q=80'; selectedDescription = 'Arabika Gayo dari ketinggian 1.400 mdpl. Proses natural sun-dry menghasilkan cita rasa fruity dengan body sedang dan after taste dark chocolate yang khas. Cocok untuk metode pour over dan V60.'">
-                    <div class="h-44 bg-gray-100 overflow-hidden">
-                        <img src="https://images.unsplash.com/photo-1507133750040-4a8f57021571?auto=format&fit=crop&w=400&q=80" alt="Arabika Gayo" class="w-full h-full object-cover">
-                    </div>
-                    <div class="p-4 flex-1 flex flex-col justify-between">
-                        <div>
-                            <h4 class="font-bold text-gray-800 text-sm mb-0.5">Arabika Gayo Premium</h4>
-                            <p class="text-gray-400 text-xs mb-2">Rumah Kopi Aceh</p>
-                        </div>
-                        <div>
-                            <span class="text-[#c57d38] font-bold text-sm block mb-1">Rp 85.000</span>
-                            <div class="flex items-center text-[11px] text-gray-400 gap-1">
-                                <span class="text-yellow-500">★</span> 4.9 <span class="mx-1">•</span> 120 terjual
+            {{-- Satu kategori dipilih --}}
+            <div x-show="selectedCategory" x-cloak>
+                <div class="mb-4 flex items-center gap-2">
+                    <span class="inline-flex rounded-full border px-3 py-1 text-xs font-bold" :class="categoryStyles[selectedCategory]?.badge || 'bg-gray-100 text-gray-600'" x-text="getCategoryLabel(selectedCategory)"></span>
+                    <span class="text-xs text-gray-400" x-text="filteredProducts.length + ' produk'"></span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <template x-for="product in filteredProducts" :key="product.id">
+                        <div class="bg-white rounded-xl overflow-hidden border border-gray-100 flex flex-col cursor-pointer hover:shadow-md transition"
+                             @click="selectProduct(product)">
+                            <div class="relative h-44 bg-gray-100 overflow-hidden">
+                                <img :src="product.image_url" :alt="product.name" loading="lazy"
+                                     x-on:error="imageFallback($event, product.fallback_image)"
+                                     class="w-full h-full object-cover">
+                                <span class="absolute left-3 top-3 inline-flex rounded-full border px-2 py-0.5 text-[10px] font-bold shadow-sm" :class="product.category_badge" x-text="product.category_label"></span>
+                            </div>
+                            <div class="p-4 flex-1 flex flex-col justify-between">
+                                <div>
+                                    <h4 class="font-bold text-gray-800 text-sm mb-0.5" x-text="product.name"></h4>
+                                    <p class="text-gray-400 text-xs mb-2" x-text="product.shop_name"></p>
+                                </div>
+                                <div>
+                                    <span class="text-[#c57d38] font-bold text-sm block mb-1" x-text="'Rp ' + product.price.toLocaleString('id-ID')"></span>
+                                    <p class="text-[11px] text-gray-400"><span x-text="product.orders_count + ' terjual'"></span></p>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    </template>
                 </div>
+            </div>
 
-                <div class="bg-white rounded-xl overflow-hidden border border-gray-100 flex flex-col cursor-pointer hover:shadow-md transition relative"
-                     @click="page = 'detail'; selectedProduct = 'Robusta Lampung'; selectedPrice = 55000; qty = 1; selectedImg = 'https://images.unsplash.com/photo-1511920170033-f8396924c348?auto=format&fit=crop&w=600&q=80'; selectedDescription = 'Kopi Robusta asli Lampung dengan body tebal, rasa cokelat yang pekat, dan keasaman yang sangat rendah. Di-roast secara merata untuk menjaga kekuatan rasa kopinya.'">
-                    <div class="h-44 bg-gray-100 overflow-hidden">
-                        <img src="https://images.unsplash.com/photo-1511920170033-f8396924c348?auto=format&fit=crop&w=400&q=80" alt="Robusta Lampung" class="w-full h-full object-cover">
-                    </div>
-                    <div class="p-4 flex-1 flex flex-col justify-between">
-                        <div>
-                            <div class="mb-1"><span class="bg-[#fdf3e7] text-[#c57d38] text-[9px] font-bold px-1.5 py-0.5 rounded">Promo</span></div>
-                            <h4 class="font-bold text-gray-800 text-sm mb-0.5">Robusta Lampung</h4>
-                            <p class="text-gray-400 text-xs mb-2">Kopi Siger</p>
+            {{-- Semua kategori — dikelompokkan --}}
+            <div x-show="!selectedCategory" class="space-y-10">
+                <template x-for="group in productGroups" :key="group.key">
+                    <div>
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="inline-flex rounded-full border px-3 py-1 text-xs font-bold" :class="group.badge" x-text="group.label"></span>
+                            <span class="text-xs text-gray-400" x-text="group.items.length + ' produk'"></span>
+                            <a :href="'{{ url('/') }}?category=' + group.key" class="ml-auto text-xs font-semibold text-[#c57d38] hover:underline">Lihat semua</a>
                         </div>
-                        <div>
-                            <span class="text-[#c57d38] font-bold text-sm block mb-1">Rp 55.000</span>
-                            <div class="flex items-center text-[11px] text-gray-400 gap-1">
-                                <span class="text-yellow-500">★</span> 4.7 <span class="mx-1">•</span> 98 terjual
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-xl overflow-hidden border border-gray-100 flex flex-col cursor-pointer hover:shadow-md transition relative"
-                     @click="page = 'detail'; selectedProduct = 'Kintamani Natural'; selectedPrice = 92000; qty = 1; selectedImg = 'https://images.unsplash.com/photo-1497935586351-b67a49e012bf?auto=format&fit=crop&w=600&q=80'; selectedDescription = 'Kopi Kintamani Bali yang diproses secara natural, menghasilkan karakter rasa sitrus jeruk segar yang dikombinasikan manis karamel alami.'">
-                    <div class="h-44 bg-gray-100 overflow-hidden">
-                        <img src="https://images.unsplash.com/photo-1497935586351-b67a49e012bf?auto=format&fit=crop&w=400&q=80" alt="Kintamani Natural" class="w-full h-full object-cover">
-                    </div>
-                    <div class="p-4 flex-1 flex flex-col justify-between">
-                        <div>
-                            <div class="mb-1"><span class="bg-[#eaf7f2] text-[#42b286] text-[9px] font-bold px-1.5 py-0.5 rounded">Baru</span></div>
-                            <h4 class="font-bold text-gray-800 text-sm mb-0.5">Kintamani Natural</h4>
-                            <p class="text-gray-400 text-xs mb-2">Bali Coffee Co.</p>
-                        </div>
-                        <div>
-                            <span class="text-[#c57d38] font-bold text-sm block mb-1">Rp 92.000</span>
-                            <div class="flex items-center text-[11px] text-gray-400 gap-1">
-                                <span class="text-yellow-500">★</span> 4.8 <span class="mx-1">•</span> 45 terjual
-                            </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <template x-for="product in group.items" :key="product.id">
+                                <div class="bg-white rounded-xl overflow-hidden border border-gray-100 flex flex-col cursor-pointer hover:shadow-md transition"
+                                     @click="selectProduct(product)">
+                                    <div class="relative h-44 bg-gray-100 overflow-hidden">
+                                        <img :src="product.image_url" :alt="product.name" loading="lazy"
+                                             x-on:error="imageFallback($event, product.fallback_image)"
+                                             class="w-full h-full object-cover">
+                                        <span class="absolute left-3 top-3 inline-flex rounded-full border px-2 py-0.5 text-[10px] font-bold shadow-sm" :class="product.category_badge" x-text="product.category_label"></span>
+                                    </div>
+                                    <div class="p-4 flex-1 flex flex-col justify-between">
+                                        <div>
+                                            <h4 class="font-bold text-gray-800 text-sm mb-0.5" x-text="product.name"></h4>
+                                            <p class="text-gray-400 text-xs mb-2" x-text="product.shop_name"></p>
+                                        </div>
+                                        <div>
+                                            <span class="text-[#c57d38] font-bold text-sm block mb-1" x-text="'Rp ' + product.price.toLocaleString('id-ID')"></span>
+                                            <p class="text-[11px] text-gray-400"><span x-text="product.orders_count + ' terjual'"></span></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
                         </div>
                     </div>
-                </div>
-
-                <div class="bg-white rounded-xl overflow-hidden border border-gray-100 flex flex-col cursor-pointer hover:shadow-md transition"
-                     @click="page = 'detail'; selectedProduct = 'Flores Bajawa'; selectedPrice = 78000; qty = 1; selectedImg = 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=600&q=80'; selectedDescription = 'Kopi organik terpopuler dari Bajawa Flores, memiliki sensasi rasa cokelat kacang dengan keharuman bunga (floral aroma) yang legit.'">
-                    <div class="h-44 bg-gray-100 overflow-hidden">
-                        <img src="https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=400&q=80" alt="Flores Bajawa" class="w-full h-full object-cover">
-                    </div>
-                    <div class="p-4 flex-1 flex flex-col justify-between">
-                        <div>
-                            <h4 class="font-bold text-gray-800 text-sm mb-0.5">Flores Bajawa</h4>
-                            <p class="text-gray-400 text-xs mb-2">Kopi Ende NTT</p>
-                        </div>
-                        <div>
-                            <span class="text-[#c57d38] font-bold text-sm block mb-1">Rp 78.000</span>
-                            <div class="flex items-center text-[11px] text-gray-400 gap-1">
-                                <span class="text-yellow-500">★</span> 4.6 <span class="mx-1">•</span> 63 terjual
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                </template>
+            </div>
+            <div x-show="filteredProducts.length === 0" class="text-center py-12 text-gray-400 text-sm">
+                @if ($products->isEmpty())
+                    Belum ada produk di database. Login sebagai admin untuk menambahkan produk, atau jalankan: <code class="text-xs bg-gray-100 px-2 py-1 rounded">php artisan db:seed --class=MarketplaceSeeder</code>
+                @else
+                    Tidak ada produk yang cocok dengan pencarian atau filter.
+                @endif
             </div>
         </section>
 
@@ -249,38 +341,18 @@
                 <a href="#" class="text-xs text-[#c57d38] font-medium hover:underline">Lihat semua</a>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="bg-white p-4 rounded-xl border border-gray-100 flex items-center gap-4 hover:shadow-sm transition">
-                    <div class="w-12 h-12 rounded-full bg-[#cc8444] text-white flex items-center justify-center font-bold text-sm">RA</div>
-                    <div>
-                        <h4 class="font-bold text-gray-800 text-sm">Rumah Kopi Aceh</h4>
-                        <p class="text-gray-400 text-xs mb-1">Aceh Tengah</p>
-                        <span class="text-[#c57d38] text-[11px] font-medium">12 produk</span>
+                @forelse ($umkmShops as $shop)
+                    <div class="bg-white p-4 rounded-xl border border-gray-100 flex items-center gap-4 hover:shadow-sm transition">
+                        <div class="w-12 h-12 rounded-full text-white flex items-center justify-center font-bold text-sm" style="background-color: {{ $shop['color'] }}">{{ $shop['initials'] }}</div>
+                        <div>
+                            <h4 class="font-bold text-gray-800 text-sm">{{ $shop['name'] }}</h4>
+                            <p class="text-gray-400 text-xs mb-1">{{ $shop['region'] }}</p>
+                            <span class="text-[#c57d38] text-[11px] font-medium">{{ $shop['products_count'] }} produk</span>
+                        </div>
                     </div>
-                </div>
-                <div class="bg-white p-4 rounded-xl border border-gray-100 flex items-center gap-4 hover:shadow-sm transition">
-                    <div class="w-12 h-12 rounded-full bg-[#1fa471] text-white flex items-center justify-center font-bold text-sm">KS</div>
-                    <div>
-                        <h4 class="font-bold text-gray-800 text-sm">Kopi Siger</h4>
-                        <p class="text-gray-400 text-xs mb-1">Lampung Barat</p>
-                        <span class="text-[#c57d38] text-[11px] font-medium">8 produk</span>
-                    </div>
-                </div>
-                <div class="bg-white p-4 rounded-xl border border-gray-100 flex items-center gap-4 hover:shadow-sm transition">
-                    <div class="w-12 h-12 rounded-full bg-[#2c84e4] text-white flex items-center justify-center font-bold text-sm">BC</div>
-                    <div>
-                        <h4 class="font-bold text-gray-800 text-sm">Bali Coffee Co.</h4>
-                        <p class="text-gray-400 text-xs mb-1">Kintamani, Bali</p>
-                        <span class="text-[#c57d38] text-[11px] font-medium">15 produk</span>
-                    </div>
-                </div>
-                <div class="bg-white p-4 rounded-xl border border-gray-100 flex items-center gap-4 hover:shadow-sm transition">
-                    <div class="w-12 h-12 rounded-full bg-[#846cf4] text-white flex items-center justify-center font-bold text-sm">KE</div>
-                    <div>
-                        <h4 class="font-bold text-gray-800 text-sm">Kopi Ende NTT</h4>
-                        <p class="text-gray-400 text-xs mb-1">Flores, NTT</p>
-                        <span class="text-[#c57d38] text-[11px] font-medium">9 produk</span>
-                    </div>
-                </div>
+                @empty
+                    <p class="col-span-full text-center text-sm text-gray-400 py-6">Belum ada UMKM terdaftar. Tambahkan penjual dan produk melalui panel admin.</p>
+                @endforelse
             </div>
         </section>
     </main>
@@ -296,39 +368,30 @@
         <div class="flex flex-col lg:flex-row gap-10 bg-transparent mb-10">
             <div class="w-full lg:w-1/2 space-y-4">
                 <div class="w-full h-[400px] bg-gray-200 rounded-2xl overflow-hidden shadow-sm">
-                    <img :src="selectedImg" alt="Foto Kopi" class="w-full h-full object-cover">
-                </div>
-                <div class="grid grid-cols-4 gap-3">
-                    <div class="h-20 rounded-xl overflow-hidden border-2 border-[#c57d38] cursor-pointer">
-                        <img :src="selectedImg" class="w-full h-full object-cover">
-                    </div>
-                    <div class="h-20 rounded-xl overflow-hidden border border-gray-200 opacity-60 hover:opacity-100 cursor-pointer">
-                        <img src="https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=200&q=80" class="w-full h-full object-cover">
-                    </div>
-                    <div class="h-20 rounded-xl overflow-hidden border border-gray-200 opacity-60 hover:opacity-100 cursor-pointer">
-                        <img src="https://images.unsplash.com/photo-1511920170033-f8396924c348?auto=format&fit=crop&w=200&q=80" class="w-full h-full object-cover">
-                    </div>
-                    <div class="h-20 rounded-xl overflow-hidden border border-gray-200 opacity-60 hover:opacity-100 cursor-pointer">
-                        <img src="https://images.unsplash.com/photo-1497935586351-b67a49e012bf?auto=format&fit=crop&w=200&q=80" class="w-full h-full object-cover">
-                    </div>
+                    <img :src="selectedImg" alt="Foto Kopi" class="w-full h-full object-cover"
+                         x-on:error="imageFallback($event, 'https://images.unsplash.com/photo-1507133750040-4a8f57021571?w=600&h=440&fit=crop&q=80')">
                 </div>
             </div>
 
             <div class="w-full lg:w-1/2 flex flex-col justify-between">
                 <div>
-                    <span class="inline-block bg-[#eaf7f2] text-[#42b286] text-xs font-bold px-2.5 py-1 rounded mb-3">Stok ada</span>
+                    <div class="flex flex-wrap items-center gap-2 mb-3">
+                        <span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-bold" :class="selectedCategoryBadge" x-text="selectedCategoryLabel"></span>
+                        <span class="inline-block text-xs font-bold px-2.5 py-1 rounded"
+                              :class="selectedStock > 0 ? 'bg-[#eaf7f2] text-[#42b286]' : 'bg-red-50 text-red-500'"
+                              x-text="selectedStock > 0 ? 'Stok ada' : 'Stok habis'"></span>
+                    </div>
                     <h2 class="text-2xl font-extrabold text-gray-800 mb-1" x-text="selectedProduct"></h2>
-                    <p class="text-sm text-gray-400 mb-4">250g • Biji kopi • Proses Natural</p>
+                    <p class="text-sm text-gray-400 mb-4">250g • <span x-text="selectedCategoryLabel"></span></p>
                     
                     <div class="flex items-baseline gap-3 mb-4">
                         <span class="text-3xl font-black text-[#c57d38]" x-text="'Rp ' + selectedPrice.toLocaleString('id-ID')"></span>
-                        <span class="text-sm text-gray-400 line-through">Rp 100.000</span>
-                        <span class="bg-red-50 text-red-500 text-xs font-bold px-1.5 py-0.5 rounded">Hemat 15%</span>
                     </div>
 
                     <div class="flex items-center gap-1 text-sm text-gray-500 mb-6">
-                        <span class="text-yellow-500 text-base">★</span> <span class="font-bold text-gray-700">4.9</span> 
-                        <span>• 120 ulasan</span> • <span>240 terjual</span>
+                        <span class="text-yellow-500 text-base">★</span>
+                        <span class="font-bold text-gray-700" x-text="selectedCategoryLabel"></span>
+                        <span>• Stok: <span x-text="selectedStock"></span> pcs</span>
                     </div>
 
                     <div class="border-t border-b border-gray-100 py-4 mb-6">
@@ -338,13 +401,12 @@
 
                     <div class="flex items-center justify-between border border-gray-100 rounded-xl p-4 bg-white mb-6">
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full bg-[#cc8444] text-white flex items-center justify-center font-bold text-xs">RA</div>
+                            <div class="w-10 h-10 rounded-full bg-[#cc8444] text-white flex items-center justify-center font-bold text-xs" x-text="shopInitials(selectedShop)"></div>
                             <div>
-                                <h4 class="font-bold text-sm text-gray-800">Rumah Kopi Aceh</h4>
-                                <p class="text-xs text-gray-400">Aceh Tengah • Respons cepat • ★ 4.9</p>
+                                <h4 class="font-bold text-sm text-gray-800" x-text="selectedShop"></h4>
+                                <p class="text-xs text-gray-400">UMKM Kopi Nusantara • Respons cepat</p>
                             </div>
                         </div>
-                        <button class="text-xs border border-gray-200 text-gray-600 font-medium px-3 py-1.5 rounded-lg hover:bg-gray-50">Kunjungi toko</button>
                     </div>
                 </div>
 
@@ -354,18 +416,20 @@
                         <div class="flex items-center gap-3 bg-white border border-gray-200 rounded-lg p-1.5">
                             <button @click="if(qty > 1) qty--" class="w-8 h-8 flex items-center justify-center bg-gray-50 rounded font-bold hover:bg-gray-100">-</button>
                             <span class="w-6 text-center font-bold text-sm" x-text="qty"></span>
-                            <button @click="qty++" class="w-8 h-8 flex items-center justify-center bg-[#c57d38] text-white rounded font-bold hover:bg-[#a66528]">+</button>
+                            <button @click="if(qty < selectedStock) qty++" class="w-8 h-8 flex items-center justify-center bg-[#c57d38] text-white rounded font-bold hover:bg-[#a66528]">+</button>
                         </div>
-                        <span class="text-xs text-gray-400">Stok: 48 pcs</span>
+                        <span class="text-xs text-gray-400">Stok: <span x-text="selectedStock"></span> pcs</span>
                     </div>
 
                     <div class="flex gap-3">
-                        <button @click="if (@js(auth()->check())) { page = 'cart' } else { window.location.href = '{{ route('login') }}' }" 
-                                class="flex-1 border-2 border-[#c57d38] text-[#c57d38] font-bold py-3.5 rounded-xl hover:bg-[#c57d38]/5 transition text-sm">
+                        <button @click="if (@js(auth()->check())) { if(selectedId) page = 'cart'; } else { window.location.href = '{{ route('login') }}' }"
+                                :disabled="!selectedId"
+                                class="flex-1 border-2 border-[#c57d38] text-[#c57d38] font-bold py-3.5 rounded-xl hover:bg-[#c57d38]/5 transition text-sm disabled:opacity-50">
                             + Tambah ke Keranjang
                         </button>
-                        <button @click="if (@js(auth()->check())) { isPaymentOpen = true } else { window.location.href = '{{ route('login') }}' }" 
-                                class="flex-1 bg-[#c57d38] text-white font-bold py-3.5 rounded-xl hover:bg-[#a66528] transition shadow-md text-sm">
+                        <button @click="if (@js(auth()->check())) { if(selectedId) isPaymentOpen = true; } else { window.location.href = '{{ route('login') }}' }"
+                                :disabled="!selectedId"
+                                class="flex-1 bg-[#c57d38] text-white font-bold py-3.5 rounded-xl hover:bg-[#a66528] transition shadow-md text-sm disabled:opacity-50">
                             Beli Sekarang
                         </button>
                     </div>
@@ -427,21 +491,22 @@
                         <button class="text-red-500 font-semibold text-xs hover:underline">Hapus dipilih</button>
                     </div>
 
-                    <div class="px-6 py-3 border-b border-gray-50 flex items-center gap-2 bg-white">
-                        <div class="w-5 h-5 rounded-full bg-[#cc8444] text-white flex items-center justify-center text-[10px] font-bold">RA</div>
-                        <span class="text-xs font-bold text-gray-800">Rumah Kopi Aceh</span>
+                    <div class="px-6 py-3 border-b border-gray-50 flex items-center gap-2 bg-white" x-show="selectedShop">
+                        <div class="w-5 h-5 rounded-full bg-[#cc8444] text-white flex items-center justify-center text-[10px] font-bold" x-text="shopInitials(selectedShop)"></div>
+                        <span class="text-xs font-bold text-gray-800" x-text="selectedShop"></span>
                     </div>
 
                     <div class="p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white">
                         <input type="checkbox" x-model="cartChecked" class="w-4 h-4 rounded border-gray-300 text-[#c57d38] focus:ring-[#c57d38] mt-4 sm:mt-0">
                         
                         <div class="w-20 h-20 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0">
-                            <img :src="selectedImg" class="w-full h-full object-cover">
+                            <img :src="selectedImg" class="w-full h-full object-cover"
+                                 x-on:error="imageFallback($event, 'https://images.unsplash.com/photo-1507133750040-4a8f57021571?w=200&h=200&fit=crop&q=80')">
                         </div>
 
                         <div class="flex-1">
                             <h4 class="font-bold text-gray-800 text-sm leading-tight" x-text="selectedProduct + ' 250g'"></h4>
-                            <p class="text-xs text-gray-400 mt-1">Varian: Biji kopi • Roast: Medium</p>
+                            <p class="text-xs text-gray-400 mt-1" x-text="'Kategori: ' + selectedCategoryLabel"></p>
                             <span class="text-[#c57d38] font-extrabold text-sm block mt-2" x-text="'Rp ' + selectedPrice.toLocaleString('id-ID')"></span>
                         </div>
 
@@ -449,7 +514,7 @@
                             <div class="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg p-1">
                                 <button @click="if(qty > 1) qty--" class="w-7 h-7 flex items-center justify-center bg-white rounded shadow-sm font-bold text-gray-600 hover:bg-gray-100">-</button>
                                 <span class="w-6 text-center font-bold text-xs text-gray-800" x-text="qty"></span>
-                                <button @click="qty++" class="w-7 h-7 flex items-center justify-center bg-[#c57d38] text-white rounded shadow-sm font-bold hover:bg-[#a66528]">+</button>
+                                <button @click="if(qty < selectedStock) qty++" class="w-7 h-7 flex items-center justify-center bg-[#c57d38] text-white rounded shadow-sm font-bold hover:bg-[#a66528]">+</button>
                             </div>
                             <button @click="qty = 1; cartChecked = false" class="text-gray-400 hover:text-red-500 text-xs font-semibold transition">Hapus</button>
                         </div>
@@ -538,10 +603,10 @@
                         </div>
                     </div>
 
-                    <button class="w-full bg-[#c57d38] text-white font-bold py-4 rounded-xl shadow-md hover:bg-[#a66528] transition text-sm flex items-center justify-center gap-2"
-                            :disabled="!cartChecked || isLoading"
-                            :class="!cartChecked ? 'opacity-50 cursor-not-allowed' : ''"
-                            @click="if (@js(auth()->check())) { isLoading = true; setTimeout(() => { alert('Transaksi Sukses! Silakan periksa halaman pesanan saya.'); page = 'home'; isLoading = false; }, 1500) } else { window.location.href = '{{ route('login') }}' }">
+                    <button type="button" class="w-full bg-[#c57d38] text-white font-bold py-4 rounded-xl shadow-md hover:bg-[#a66528] transition text-sm flex items-center justify-center gap-2"
+                            :disabled="!cartChecked || isLoading || !selectedId"
+                            :class="(!cartChecked || !selectedId) ? 'opacity-50 cursor-not-allowed' : ''"
+                            @click="if (@js(auth()->check())) { isLoading = true; submitCheckout(); } else { window.location.href = '{{ route('login') }}' }">
                         <span x-text="isLoading ? 'Memproses Transaksi...' : 'Lanjutkan ke Pembayaran'"></span>
                     </button>
                 </div>
@@ -550,6 +615,12 @@
     </main>
 
     <main x-show="page === 'profile'" x-cloak class="max-w-4xl mx-auto px-6 py-8">
+        @guest
+        <div class="bg-white border border-gray-100 rounded-2xl p-8 text-center">
+            <p class="text-gray-500 mb-4">Silakan masuk untuk mengedit profil.</p>
+            <a href="{{ route('login') }}" class="inline-block bg-[#c57d38] text-white px-6 py-2.5 rounded-xl text-sm font-bold">Masuk</a>
+        </div>
+        @else
         <div class="flex items-center gap-2 text-sm text-gray-500 mb-6 cursor-pointer hover:text-gray-800" @click="page = 'home'">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path>
@@ -561,25 +632,26 @@
             <h2 class="text-xl font-bold text-gray-800 mb-2">Edit Profil Pengguna</h2>
             <p class="text-xs text-gray-400 mb-6">Perbarui informasi profil Anda untuk keperluan pengiriman dan transaksi yang aman.</p>
             
-            <form @submit.prevent="alert('Profil berhasil diperbarui!'); page = 'home'" class="space-y-4">
+            <form method="POST" action="{{ route('profile.update') }}" class="space-y-4">
+                @csrf
                 <div>
                     <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Nama Lengkap</label>
-                    <input type="text" x-model="userProfile.nama" required
+                    <input type="text" name="name" x-model="userProfile.nama" required
                            class="w-full px-4 py-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl focus:outline-none border border-gray-200 focus:border-[#c57d38]/40">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Alamat Email</label>
-                    <input type="email" x-model="userProfile.email" required
+                    <input type="email" name="email" x-model="userProfile.email" required
                            class="w-full px-4 py-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl focus:outline-none border border-gray-200 focus:border-[#c57d38]/40">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Nomor Telepon</label>
-                    <input type="text" x-model="userProfile.telepon" required
+                    <input type="text" name="phone" x-model="userProfile.telepon" required
                            class="w-full px-4 py-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl focus:outline-none border border-gray-200 focus:border-[#c57d38]/40">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Alamat Pengiriman</label>
-                    <textarea x-model="userProfile.alamat" rows="3" required
+                    <textarea name="address" x-model="userProfile.alamat" rows="3" required
                               class="w-full px-4 py-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl focus:outline-none border border-gray-200 focus:border-[#c57d38]/40"></textarea>
                 </div>
 
@@ -593,6 +665,7 @@
                 </div>
             </form>
         </div>
+        @endguest
     </main>
 
     <div x-show="isPaymentOpen" class="fixed inset-0 z-[100] overflow-y-auto" style="display: none;" x-cloak>
@@ -678,9 +751,9 @@
                     </div>
 
                     <div class="pt-2 border-t border-dashed border-gray-200">
-                        <button class="w-full bg-[#c57d38] text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-[#a66528] transition flex items-center justify-center gap-2"
-                                :disabled="isLoading" 
-                                @click="isLoading = true; setTimeout(() => { alert('Pesanan Langsung Berhasil Dibuat! Admin UMKM akan segera memproses pengiriman kopi Anda.'); isPaymentOpen = false; page = 'home'; isLoading = false; }, 1200)">
+                        <button type="button" class="w-full bg-[#c57d38] text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-[#a66528] transition flex items-center justify-center gap-2"
+                                :disabled="isLoading || !selectedId"
+                                @click="if (@js(auth()->check())) { isLoading = true; submitCheckout(); } else { window.location.href = '{{ route('login') }}' }">
                             <span x-text="isLoading ? 'Memproses Pesanan...' : 'Saya Sudah Melakukan Pembayaran'"></span>
                         </button>
                     </div>

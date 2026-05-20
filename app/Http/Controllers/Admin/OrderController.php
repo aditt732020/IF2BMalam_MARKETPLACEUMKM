@@ -17,27 +17,18 @@ class OrderController extends Controller
             $editOrder = Order::find($request->integer('edit'));
         }
 
-        $orders = Order::with(['buyer', 'product'])->latest()->paginate(10);
-        $buyers = User::where('role', 'buyer')->orderBy('name')->get();
-        $products = Product::orderBy('name')->get();
+        $query = Order::with(['buyer', 'product'])->latest();
 
-        return view('admin.orders', compact('orders', 'buyers', 'products', 'editOrder'));
-    }
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
 
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'buyer_id' => 'required|exists:users,id',
-            'product_id' => 'required|exists:products,id',
-            'quantity' => 'required|integer|min:1',
-            'status' => 'required|in:pending,paid,shipped,completed,cancelled',
-        ]);
+        $orders = $query->paginate(10)->withQueryString();
+        $statuses = Order::statuses();
+        $buyers = $editOrder ? User::where('role', 'buyer')->orderBy('name')->get() : collect();
+        $products = $editOrder ? Product::orderBy('name')->get() : collect();
 
-        $product = Product::findOrFail($validated['product_id']);
-        $validated['total_price'] = $product->price * $validated['quantity'];
-        Order::create($validated);
-
-        return redirect()->route('admin.orders')->with('success', 'Pesanan berhasil ditambahkan.');
+        return view('admin.orders', compact('orders', 'buyers', 'products', 'editOrder', 'statuses'));
     }
 
     public function update(Request $request, Order $order)

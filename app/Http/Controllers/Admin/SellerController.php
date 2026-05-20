@@ -27,12 +27,18 @@ class SellerController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email',
+            'phone' => 'nullable|string|max:20',
+            'region' => 'nullable|string|max:255',
+            'address' => 'nullable|string',
             'password' => 'required|string|min:6',
         ]);
 
         User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
+            'phone' => $validated['phone'] ?? null,
+            'region' => $validated['region'] ?? null,
+            'address' => $validated['address'] ?? null,
             'password' => Hash::make($validated['password']),
             'role' => 'seller',
         ]);
@@ -54,12 +60,18 @@ class SellerController extends Controller
                 'max:255',
                 Rule::unique('users', 'email')->ignore($seller->id),
             ],
+            'phone' => 'nullable|string|max:20',
+            'region' => 'nullable|string|max:255',
+            'address' => 'nullable|string',
             'password' => 'nullable|string|min:6',
         ]);
 
         $payload = [
             'name' => $validated['name'],
             'email' => $validated['email'],
+            'phone' => $validated['phone'] ?? null,
+            'region' => $validated['region'] ?? null,
+            'address' => $validated['address'] ?? null,
         ];
 
         if (!empty($validated['password'])) {
