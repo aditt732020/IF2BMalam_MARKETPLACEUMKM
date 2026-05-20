@@ -47,3 +47,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::put('/sellers/{seller}', [SellerController::class, 'update'])->name('sellers.update');
     Route::delete('/sellers/{seller}', [SellerController::class, 'destroy'])->name('sellers.destroy');
 });
+
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
+
+
