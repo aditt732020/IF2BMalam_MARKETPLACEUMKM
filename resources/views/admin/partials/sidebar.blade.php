@@ -9,14 +9,15 @@
 @endphp
 
 <aside class="flex h-full w-72 flex-col bg-gradient-to-b from-[#3a2010] via-[#4a2e1a] to-[#2d1608] text-white">
-    <div class="border-b border-white/10 px-6 py-6">
+    {{-- Bagian Brand Header (Sudah diganti dengan Logo baru Anda) --}}
+    <div class="border-b border-white/10 px-6 py-5">
         <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3">
-            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-[#c57d38] shadow-lg shadow-[#c57d38]/30">
-                <span class="text-lg font-black">K</span>
-            </div>
+            <img src="{{ asset('image/logo3.png') }}" alt="Logo Kopi Nusantara" class="h-20 w-auto object-contain">
+            
+            {{-- Teks kecil di samping logo (Opsional, silakan hapus block div di bawah ini jika ingin logo saja) --}}
             <div>
-                <h1 class="text-base font-bold leading-tight">KopiNusantara</h1>
-                <p class="text-[10px] tracking-wide text-[#d4b896]">Admin · Marketplace UMKM</p>
+                <h1 class="text-sm font-bold leading-tight text-white">Kopi Nusantara</h1>
+                <p class="text-[10px] tracking-wide text-[#d4b896]">Admin Panel</p>
             </div>
         </a>
     </div>

@@ -101,75 +101,72 @@
     }
 }">
 
-    <nav class="bg-white border-b border-gray-100 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-            <div class="flex items-center gap-3 cursor-pointer" @click="page = 'home'">
-                <div class="w-9 h-9 bg-[#c57d38] rounded flex items-center justify-center">
-                    <span class="text-white font-bold text-lg">K</span>
-                </div>
-                <div>
-                    <h1 class="text-[#3a2010] font-bold text-base leading-tight">KopiNusantara</h1>
-                    <p class="text-gray-400 text-[10px] tracking-wide">Marketplace UMKM Kopi</p>
-                </div>
-            </div>
-
-            <div class="hidden md:flex items-center gap-8 text-sm font-medium">
-                <a href="#" @click.prevent="page = 'home'" :class="page === 'home' ? 'text-[#c57d38]' : 'text-gray-500 hover:text-gray-800'">Beranda</a>
-                <a href="#" @click.prevent="page = 'home'" class="text-gray-500 hover:text-gray-800">Toko UMKM</a>
-                <a href="#" @click.prevent="page = 'home'" class="text-gray-500 hover:text-gray-800">Tentang Kami</a>
-            </div>
-
-            <div class="flex items-center gap-6 relative">
-                <div class="text-gray-700 hover:text-[#c57d38] cursor-pointer transition relative" 
-                     @click="if (@js(auth()->check())) { page = 'cart' } else { window.location.href = '{{ route('login') }}' }">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                    </svg>
-                    <span x-show="cartCount > 0" class="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold" x-text="cartCount"></span>
-                </div>
-
-                @auth
-                    <div class="relative" @click.away="isProfileDropdownOpen = false">
-                        <button @click="isProfileDropdownOpen = !isProfileDropdownOpen" class="text-gray-700 hover:text-[#c57d38] focus:outline-none transition flex items-center">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                            </svg>
-                        </button>
-
-                        <div x-show="isProfileDropdownOpen" x-cloak
-                             x-transition:enter="transition ease-out duration-100"
-                             x-transition:enter-start="transform opacity-0 scale-95"
-                             x-transition:enter-end="transform opacity-100 scale-100"
-                             x-transition:leave="transition ease-in duration-75"
-                             x-transition:leave-start="transform opacity-100 scale-100"
-                             x-transition:leave-end="transform opacity-0 scale-95"
-                             class="absolute right-0 mt-3 w-48 bg-white border border-gray-100 rounded-xl shadow-lg py-2 z-50">
-                            
-                            <div class="px-4 py-2 border-b border-gray-50">
-                                <p class="text-xs text-gray-400">Masuk sebagai</p>
-                                <p class="text-xs font-bold text-gray-800 truncate" x-text="userProfile.nama"></p>
-                            </div>
-
-                            <a href="#" @click.prevent="page = 'profile'; isProfileDropdownOpen = false" class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-[#fdf3e7] hover:text-[#c57d38] transition font-medium">
-                                Edit Profil
-                            </a>
-
-                            <a href="{{ route('logout') }}" @click="alert('Anda telah berhasil keluar.'); isProfileDropdownOpen = false" class="block px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition font-medium border-t border-gray-50">
-                                Logout
-                            </a>
-                        </div>
-                    </div>
-                @endauth
-
-                @guest
-                    <a href="{{ route('login') }}" class="bg-[#c57d38] hover:bg-[#a66528] text-white px-5 py-2 rounded-xl text-xs font-bold transition shadow-sm">
-                        Masuk
-                    </a>
-                @endguest
-            </div>
+  <nav class="bg-white border-b border-gray-100 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        
+        {{-- SISI KIRI: Logo Baru Kopi Nusantara Transparan --}}
+        <div class="flex items-center cursor-pointer" @click="page = 'home'">
+            <img src="{{ asset('image/logo3.png') }}" alt="Logo Kopi Nusantara" class="h-20 w-auto object-contain">
         </div>
-    </nav>
 
+        {{-- SISI TENGAH: Menu Navigasi --}}
+        <div class="hidden md:flex items-center gap-8 text-sm font-medium">
+            <a href="#" @click.prevent="page = 'home'" :class="page === 'home' ? 'text-[#c57d38]' : 'text-gray-500 hover:text-gray-800'">Beranda</a>
+            <a href="#" @click.prevent="page = 'home'" class="text-gray-500 hover:text-gray-800">Toko UMKM</a>
+            <a href="#" @click.prevent="page = 'home'" class="text-gray-500 hover:text-gray-800">Tentang Kami</a>
+        </div>
+
+        {{-- SISI KANAN: Keranjang & Profil/Login --}}
+        <div class="flex items-center gap-6 relative">
+            <div class="text-gray-700 hover:text-[#c57d38] cursor-pointer transition relative" 
+                 @click="if (@js(auth()->check())) { page = 'cart' } else { window.location.href = '{{ route('login') }}' }">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                </svg>
+                <span x-show="cartCount > 0" class="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold" x-text="cartCount"></span>
+            </div>
+
+            @auth
+                <div class="relative" @click.away="isProfileDropdownOpen = false">
+                    <button @click="isProfileDropdownOpen = !isProfileDropdownOpen" class="text-gray-700 hover:text-[#c57d38] focus:outline-none transition flex items-center">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                        </svg>
+                    </button>
+
+                    <div x-show="isProfileDropdownOpen" x-cloak
+                         x-transition:enter="transition ease-out duration-100"
+                         x-transition:enter-start="transform opacity-0 scale-95"
+                         x-transition:enter-end="transform opacity-100 scale-100"
+                         x-transition:leave="transition ease-in duration-75"
+                         x-transition:leave-start="transform opacity-100 scale-100"
+                         x-transition:leave-end="transform opacity-0 scale-95"
+                         class="absolute right-0 mt-3 w-48 bg-white border border-gray-100 rounded-xl shadow-lg py-2 z-50">
+                        
+                        <div class="px-4 py-2 border-b border-gray-50">
+                            <p class="text-xs text-gray-400">Masuk sebagai</p>
+                            <p class="text-xs font-bold text-gray-800 truncate" x-text="userProfile.nama"></p>
+                        </div>
+
+                        <a href="#" @click.prevent="page = 'profile'; isProfileDropdownOpen = false" class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-[#fdf3e7] hover:text-[#c57d38] transition font-medium">
+                            Edit Profil
+                        </a>
+
+                        <a href="{{ route('logout') }}" @click="alert('Anda telah berhasil keluar.'); isProfileDropdownOpen = false" class="block px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition font-medium border-t border-gray-50">
+                            Logout
+                        </a>
+                    </div>
+                </div>
+            @endauth
+
+            @guest
+                <a href="{{ route('login') }}" class="bg-[#c57d38] hover:bg-[#a66528] text-white px-5 py-2 rounded-xl text-xs font-bold transition shadow-sm">
+                    Masuk
+                </a>
+            @endguest
+        </div>
+    </div>
+</nav>
     @if (session('success'))
         <div class="max-w-7xl mx-auto px-6 pt-4">
             <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{{ session('success') }}</div>

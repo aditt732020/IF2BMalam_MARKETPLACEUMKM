@@ -34,12 +34,17 @@
                         <button @click="sidebarOpen = true" class="rounded-lg border border-[#e7ddd2] p-2 text-[#5a4030] hover:bg-[#f5eee7] lg:hidden">
                             <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
                         </button>
-                        <div>
-                            <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-[#c57d38]">Kopi Nusantara</p>
-                            <h2 class="text-lg font-bold text-[#3a2010] sm:text-xl">@yield('header', 'Dashboard Admin')</h2>
-                            @hasSection('subtitle')
-                                <p class="text-xs text-[#9a8070]">@yield('subtitle')</p>
-                            @endif
+                        
+                        {{-- Bagian Logo dan Judul Header --}}
+                        <div class="flex items-center gap-3">
+                            <img src="{{ asset('image/logo.png') }}" alt="Logo Kopi Nusantara" class="h-20 w-auto object-contain">
+                            
+                            <div>
+                                <h2 class="text-lg font-bold text-[#3a2010] sm:text-xl">@yield('header', 'Dashboard Admin')</h2>
+                                @hasSection('subtitle')
+                                    <p class="text-xs text-[#9a8070]">@yield('subtitle')</p>
+                                @endif
+                            </div>
                         </div>
                     </div>
 
