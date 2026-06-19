@@ -123,7 +123,7 @@
     }
 }">
 
-  <nav class="bg-white border-b border-gray-100 sticky top-0 z-50">
+  <nav class="bg-[#EAE0CF] border-b border-gray-100 sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
         
         {{-- SISI KIRI: Logo Baru Kopi Nusantara Transparan --}}
@@ -222,7 +222,7 @@
     
     <main x-show="page === 'home'" class="max-w-7xl mx-auto px-6 py-8">
         <section class="max-w-7xl mx-auto px-6 pt-10 pb-6">
-            <div class="bg-[#f5ebd9] rounded-2xl p-8 lg:p-12 flex flex-col lg:flex-row items-center justify-between gap-8 relative overflow-hidden">
+            <div class="bg-[#DCC3AA] rounded-2xl p-8 lg:p-12 flex flex-col lg:flex-row items-center justify-between gap-8 relative overflow-hidden">
                 <div class="max-w-xl z-10">
                     <span class="inline-block px-3 py-1 bg-[#ede0c8] text-[#936232] text-xs font-semibold rounded-full mb-4">100% Kopi Lokal Indonesia</span>
                     <h2 class="text-3xl lg:text-4xl font-extrabold text-[#3a1f0b] leading-tight mb-4">Temukan kopi terbaik dari UMKM pilihan</h2>

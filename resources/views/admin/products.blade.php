@@ -27,7 +27,7 @@
     <div class="mb-6 rounded-2xl border border-[#e7ddd2] bg-white p-5 shadow-sm sm:p-6">
         <h3 class="mb-1 text-base font-bold text-[#3a2010]">{{ $editProduct ? 'Edit Produk' : 'Tambah Produk Baru' }}</h3>
         <p class="mb-5 text-xs text-[#9a8070]">Isi informasi produk seperti yang ditampilkan di halaman pembeli (nama, kategori, toko UMKM, gambar).</p>
-        <form method="POST" action="{{ $editProduct ? route('admin.products.update', $editProduct) : route('admin.products.store') }}" class="grid gap-4 md:grid-cols-2">
+        <form method="POST" action="{{ $editProduct ? route('admin.products.update', $editProduct) : route('admin.products.store') }}" enctype="multipart/form-data" class="grid gap-4 md:grid-cols-2">
             @csrf
             @if ($editProduct) @method('PUT') @endif
 
@@ -53,10 +53,29 @@
                 @error('shop_name') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
             </div>
             <div>
-                <label class="mb-1 block text-xs font-bold uppercase text-[#7a6050]">URL Gambar Produk</label>
-                <input type="url" name="image_url" value="{{ old('image_url', $editProduct->image_url ?? '') }}" placeholder="https://..."
-                       class="w-full rounded-xl border border-[#e0d8cc] px-4 py-2.5 text-sm focus:border-[#c57d38] focus:outline-none focus:ring-2 focus:ring-[#c57d38]/20">
-                @error('image_url') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+                <p class="mb-1 text-xs font-bold uppercase text-[#7a6050]">Gambar Produk</p>
+                <div class="relative overflow-hidden rounded-xl border border-dashed border-[#d8c7b8] bg-[#fdf9f4] transition hover:border-[#c57d38] hover:bg-[#fdf3e7]">
+                    <input type="file" name="image" id="product_image" accept="image/jpeg,image/png,image/webp,image/jpg"
+                           class="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
+                           onchange="document.getElementById('image-filename').textContent = this.files[0]?.name || 'Belum ada file dipilih'">
+                    <div class="pointer-events-none flex items-center justify-between gap-3 px-4 py-3 text-sm">
+                        <span class="inline-flex items-center gap-2 font-semibold text-[#936232]">
+                            <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                            </svg>
+                            Pilih file gambar
+                        </span>
+                        <span id="image-filename" class="truncate text-xs text-[#9a8070]">Belum ada file dipilih</span>
+                    </div>
+                </div>
+                <p class="mt-1 text-xs text-[#9a8070]">JPG, PNG, atau WebP. Maks. 2 MB.{{ $editProduct ? ' Kosongkan jika tidak ingin mengganti gambar.' : '' }}</p>
+                @if ($editProduct && $editProduct->resolveImageUrl())
+                    <div class="mt-2 flex items-center gap-3">
+                        <img src="{{ $editProduct->resolveImageUrl() }}" alt="{{ $editProduct->name }}" class="h-16 w-16 rounded-lg object-cover border border-[#e0d8cc]">
+                        <span class="text-xs text-[#9a8070]">Gambar saat ini</span>
+                    </div>
+                @endif
+                @error('image') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
             </div>
             <div>
                 <label class="mb-1 block text-xs font-bold uppercase text-[#7a6050]">Harga (Rp)</label>
