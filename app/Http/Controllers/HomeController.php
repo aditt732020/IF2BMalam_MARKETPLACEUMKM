@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
+use App\Models\Cart;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -33,11 +34,30 @@ class HomeController extends Controller
 
         $products = $query->latest()->get();
         $activeCategory = $request->input('category', '');
-
         $productsJson = $products->map(fn (Product $p) => $this->formatProduct($p))->values();
-
         $umkmShops = $this->buildUmkmList();
         $categories = Product::categories();
+
+        // AMBIL DATA KERANJANG REAL DARI DATABASE LAINNYA
+        $realCartItems = [];
+        if (auth()->check()) {
+            $realCartItems = Cart::with('product')
+                ->where('user_id', auth()->id())
+                ->get()
+                ->map(function ($cart) {
+                    return [
+                        'cart_id' => $cart->id,
+                        'product_id' => $cart->product_id,
+                        'name' => $cart->product->name,
+                        'price' => (int) $cart->product->price,
+                        'quantity' => $cart->quantity,
+                        'stock' => $cart->product->stock,
+                        'shop_name' => $cart->product->shop_name ?? 'UMKM Lokal',
+                        'image_url' => $cart->product->resolveImageUrl(),
+                        'category_label' => $cart->product->category_label,
+                    ];
+                })->values()->toArray();
+        }
 
         return view('home', [
             'user' => auth()->user(),
@@ -47,14 +67,50 @@ class HomeController extends Controller
             'categories' => $categories,
             'activeCategory' => $activeCategory,
             'categoryStyles' => Product::categoryStyles(),
+            'realCartItems' => $realCartItems, // Dilempar ke frontend Blade
         ]);
     }
 
+    // FUNGSI BARU: Tambah ke Database Keranjang
+    public function addToCart(Request $request)
+    {
+        $validated = $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'quantity' => 'required|integer|min:1',
+        ]);
+
+        $cart = Cart::where('user_id', auth()->id())
+                    ->where('product_id', $validated['product_id'])
+                    ->first();
+
+        if ($cart) {
+            $cart->increment('quantity', $validated['quantity']);
+        } else {
+            Cart::create([
+                'user_id' => auth()->id(),
+                'product_id' => $validated['product_id'],
+                'quantity' => $validated['quantity']
+            ]);
+        }
+
+        return redirect()->route('home')->with('success', 'Produk berhasil dimasukkan ke keranjang belanja Anda!');
+    }
+
+    // FUNGSI BARU: Hapus dari Database Keranjang
+    public function removeFromCart($id)
+    {
+        Cart::where('user_id', auth()->id())->where('id', $id)->delete();
+        return redirect()->route('home')->with('success', 'Item berhasil dihapus dari keranjang.');
+    }
+
+    // UPDATE FUNGSI: Menampung Metode Pembayaran Alternatif (QRIS/Transfer)
     public function processCheckout(Request $request)
     {
         $validated = $request->validate([
             'product_id' => 'required|exists:products,id',
             'quantity' => 'required|integer|min:1',
+            'payment_method' => 'required|string',
+            'payment_bank' => 'nullable|string',
         ]);
 
         $product = Product::where('is_active', true)->findOrFail($validated['product_id']);
@@ -66,32 +122,26 @@ class HomeController extends Controller
         }
 
         DB::transaction(function () use ($product, $validated) {
+            // Menghitung subtotal ditambah biaya layanan Rp 1.000 seperti di UI ringkasan
+            $totalWithFees = ($product->price * $validated['quantity']) + 1000;
+
             Order::create([
                 'buyer_id' => auth()->id(),
                 'product_id' => $product->id,
                 'quantity' => $validated['quantity'],
-                'total_price' => $product->price * $validated['quantity'],
+                'total_price' => $totalWithFees,
                 'status' => 'pending',
+                // Anda bisa menambahkan kolom payment_method atau payment_bank di database orders jika ada, 
+                // atau mencatatnya di log / tabel detail transaksi pembayaran lainnya di sini.
             ]);
 
             $product->decrement('stock', $validated['quantity']);
+
+            // Jika barang dibeli via halaman checkout, hapus otomatis produk tersebut dari database keranjang user
+            Cart::where('user_id', auth()->id())->where('product_id', $product->id)->delete();
         });
 
-        return redirect()->route('home')->with('success', 'Pesanan berhasil dibuat! Admin akan memproses pembayaran dan pengiriman Anda.');
-    }
-
-    public function updateProfile(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users,email,' . auth()->id(),
-            'phone' => 'nullable|string|max:20',
-            'address' => 'nullable|string',
-        ]);
-
-        auth()->user()->update($validated);
-
-        return redirect()->route('home')->with('success', 'Profil berhasil diperbarui.');
+        return redirect()->route('home')->with('success', 'Pesanan berhasil dibuat! Admin akan memproses verifikasi sistem pembayaran ' . $validated['payment_method'] . ' Anda.');
     }
 
     private function formatProduct(Product $product): array

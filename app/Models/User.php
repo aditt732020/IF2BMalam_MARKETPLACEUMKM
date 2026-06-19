@@ -30,6 +30,10 @@ class User extends Authenticatable
     {
         return $this->hasMany(Order::class, 'buyer_id');
     }
+    public function carts(): HasMany
+    {
+    return $this->hasMany(Cart::class, 'user_id');
+    }
 
     protected $hidden = [
         'password',
