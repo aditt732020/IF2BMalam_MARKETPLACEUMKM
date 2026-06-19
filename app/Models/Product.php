@@ -90,6 +90,14 @@ class Product extends Model
 
     public function resolveImageUrl(): string
     {
+        if ($this->image_url) {
+            if (str_starts_with($this->image_url, 'http://') || str_starts_with($this->image_url, 'https://')) {
+                return $this->image_url;
+            }
+
+            return asset('storage/' . ltrim($this->image_url, '/'));
+        }
+
         $pool = self::imagePool()[$this->category] ?? self::imagePool()['lainnya'];
         $index = ($this->id ?? 0) % count($pool);
 
