@@ -26,7 +26,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [HomeController::class, 'index'])->name('dashboard');
     Route::get('/logout', [AuthController::class, 'logout'])->name('logout'); // Sudah diubah ke GET
     
-    // Taruh proses checkout/pembayaran di sini agar terlindungi middleware auth
+    // Fitur Keranjang Nyata
+    Route::post('/cart/add', [HomeController::class, 'addToCart'])->name('cart.add');
+    Route::delete('/cart/remove/{id}', [HomeController::class, 'removeFromCart'])->name('cart.remove');
+    
+    // Fitur Proses Checkout Terintegrasi
     Route::post('/checkout', [HomeController::class, 'processCheckout'])->name('checkout');
     Route::post('/profile', [HomeController::class, 'updateProfile'])->name('profile.update');
 });

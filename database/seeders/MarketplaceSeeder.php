@@ -2,98 +2,50 @@
 
 namespace Database\Seeders;
 
-use App\Models\Product;
-use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 
 class MarketplaceSeeder extends Seeder
 {
     public function run(): void
     {
-        $sellers = [
-            ['name' => 'Rumah Kopi Aceh', 'email' => 'aceh@kopinusantara.test', 'region' => 'Aceh Tengah'],
-            ['name' => 'Kopi Siger', 'email' => 'siger@kopinusantara.test', 'region' => 'Lampung Barat'],
-            ['name' => 'Bali Coffee Co.', 'email' => 'bali@kopinusantara.test', 'region' => 'Kintamani, Bali'],
-            ['name' => 'Kopi Ende NTT', 'email' => 'ende@kopinusantara.test', 'region' => 'Flores, NTT'],
-        ];
-
-        foreach ($sellers as $seller) {
-            User::firstOrCreate(
-                ['email' => $seller['email']],
-                [
-                    'name' => $seller['name'],
-                    'password' => Hash::make('password'),
-                    'role' => 'seller',
-                    'region' => $seller['region'],
-                ]
-            );
-        }
-
-        $products = [
+        DB::table('products')->insert([
             [
-                'name' => 'Arabika Gayo Premium',
-                'shop_name' => 'Rumah Kopi Aceh',
+                'name' => 'Kopi Arabika Gayo Aceh Full Wash',
                 'category' => 'biji_kopi',
+                'shop_name' => 'Gayo Coffee Highland',
                 'price' => 85000,
-                'stock' => 48,
-                'description' => 'Arabika Gayo dari ketinggian 1.400 mdpl. Proses natural sun-dry menghasilkan cita rasa fruity dengan body sedang dan after taste dark chocolate yang khas. Cocok untuk metode pour over dan V60.',
-                'image_url' => 'https://images.unsplash.com/photo-1507133750040-4a8f57021571?auto=format&fit=crop&w=600&q=80',
+                'stock' => 25,
+                'description' => 'Kopi Arabika Gayo pilihan dengan proses Full Wash. Memiliki notes fruity, mild body, dan keasaman yang seimbang. Cocok untuk konsumsi harian Anda.',
+                'image_url' => 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=600&h=440&fit=crop&q=80',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
             ],
             [
-                'name' => 'Robusta Lampung',
-                'shop_name' => 'Kopi Siger',
-                'category' => 'biji_kopi',
-                'price' => 55000,
-                'stock' => 35,
-                'description' => 'Kopi Robusta asli Lampung dengan body tebal, rasa cokelat yang pekat, dan keasaman yang sangat rendah. Di-roast secara merata untuk menjaga kekuatan rasa kopinya.',
-                'image_url' => 'https://images.unsplash.com/photo-1511920170033-f8396924c348?auto=format&fit=crop&w=600&q=80',
-            ],
-            [
-                'name' => 'Kintamani Natural',
-                'shop_name' => 'Bali Coffee Co.',
+                'name' => 'Kopi Bubuk Robusta Dampit Malang',
                 'category' => 'kopi_bubuk',
-                'price' => 92000,
-                'stock' => 22,
-                'description' => 'Kopi Kintamani Bali yang diproses secara natural, menghasilkan karakter rasa sitrus jeruk segar yang dikombinasikan manis karamel alami.',
-                'image_url' => 'https://images.unsplash.com/photo-1497935586351-b67a49e012bf?auto=format&fit=crop&w=600&q=80',
+                'shop_name' => 'Toko Kopi Malang City',
+                'price' => 45000,
+                'stock' => 40,
+                'description' => 'Robusta Dampit terkenal dengan body yang tebal dan aroma cokelat yang kuat. Sangat cocok bagi pencinta kopi pahit maupun campuran kopi susu.',
+                'image_url' => 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=600&q=80',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
             ],
             [
-                'name' => 'Flores Bajawa',
-                'shop_name' => 'Kopi Ende NTT',
+                'name' => 'Cold Brew Signature Mandheling 250ml',
                 'category' => 'cold_brew',
-                'price' => 78000,
-                'stock' => 30,
-                'description' => 'Kopi organik terpopuler dari Bajawa Flores, memiliki sensasi rasa cokelat kacang dengan keharuman bunga (floral aroma) yang legit.',
-                'image_url' => 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=600&q=80',
-            ],
-        ];
-
-        foreach ($products as $product) {
-            Product::firstOrCreate(
-                ['name' => $product['name']],
-                array_merge($product, ['is_active' => true])
-            );
-        }
-
-        User::firstOrCreate(
-            ['email' => 'admin@kopinusantara.test'],
-            [
-                'name' => 'Admin KopiNusantara',
-                'password' => Hash::make('password'),
-                'role' => 'admin',
+                'shop_name' => 'Brew Nusantara',
+                'price' => 35000,
+                'stock' => 15,
+                'description' => 'Kopi hitam cold brew siap minum, diseduh selama 16 jam menggunakan biji Arabika Mandheling untuk menghasilkan rasa yang smooth dan tidak terlalu asam.',
+                'image_url' => 'https://images.unsplash.com/photo-1517701604599-bb29b565090c?w=600&h=440&fit=crop&q=80',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
             ]
-        );
-
-        User::firstOrCreate(
-            ['email' => 'pembeli@kopinusantara.test'],
-            [
-                'name' => 'Budi Santoso',
-                'password' => Hash::make('password'),
-                'role' => 'buyer',
-                'phone' => '0812-3456-7890',
-                'address' => 'Jl. Sudirman No. 45, Kel. Menteng, Jakarta Pusat, DKI Jakarta 10310',
-            ]
-        );
+        ]);
     }
 }
