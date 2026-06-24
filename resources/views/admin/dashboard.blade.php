@@ -98,7 +98,6 @@
         <div class="rounded-2xl border border-[#e7ddd2] bg-white shadow-sm lg:col-span-2">
             <div class="flex items-center justify-between border-b border-[#f0e6dc] px-6 py-4">
                 <h3 class="text-sm font-bold text-[#3a2010]">Pesanan Terbaru</h3>
-                <a href="{{ route('admin.orders') }}" class="text-xs font-semibold text-[#c57d38] hover:underline">Lihat semua</a>
             </div>
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
