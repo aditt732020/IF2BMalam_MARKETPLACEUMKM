@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
 use App\Models\Cart;
+use App\Models\ProductReview;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -34,9 +35,13 @@ class HomeController extends Controller
 
         $products = $query->latest()->get();
         $activeCategory = $request->input('category', '');
-        $productsJson = $products->map(fn (Product $p) => $this->formatProduct($p))->values();
+        $productsJson = $products->map(fn(Product $p) => $this->formatProduct($p))->values();
         $umkmShops = $this->buildUmkmList();
         $categories = Product::categories();
+        $reviews = ProductReview::with(['user', 'product'])
+            ->latest()
+            ->take(10)
+            ->get();
 
         // AMBIL DATA KERANJANG REAL DARI DATABASE LAINNYA
         $realCartItems = [];
@@ -58,16 +63,21 @@ class HomeController extends Controller
                     ];
                 })->values()->toArray();
         }
+        $reviews = ProductReview::with(['user', 'product'])
+            ->latest()
+            ->take(10)
+            ->get();
 
         return view('home', [
             'user' => auth()->user(),
             'products' => $products,
             'productsJson' => $productsJson,
             'umkmShops' => $umkmShops,
-            'categories' => $categories,
+            'categories' => $categories,    
             'activeCategory' => $activeCategory,
             'categoryStyles' => Product::categoryStyles(),
-            'realCartItems' => $realCartItems, // Dilempar ke frontend Blade
+            'realCartItems' => $realCartItems,
+            'reviews' => $reviews,
         ]);
     }
 
@@ -80,8 +90,8 @@ class HomeController extends Controller
         ]);
 
         $cart = Cart::where('user_id', auth()->id())
-                    ->where('product_id', $validated['product_id'])
-                    ->first();
+            ->where('product_id', $validated['product_id'])
+            ->first();
 
         if ($cart) {
             $cart->increment('quantity', $validated['quantity']);

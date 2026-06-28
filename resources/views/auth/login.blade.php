@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,27 +13,22 @@
         }
     </style>
 </head>
+
 <body class="bg-[#f9f6f2]">
     <div class="min-h-screen flex items-center justify-center p-4">
         <div class="max-w-6xl w-full bg-[#f9f6f2] rounded-2xl overflow-hidden">
             <div class="flex flex-col lg:flex-row">
-                
+
                 <!-- Sisi Kiri - Hero Section -->
                 <div class="flex-1 bg-gradient-to-br from-[#5a4030] to-[#3a2010] p-8 lg:p-12 rounded-2xl lg:rounded-r-none relative overflow-hidden">
                     <!-- Background pattern -->
                     <div class="absolute top-0 right-0 w-64 h-64 bg-[#c97e3a]/10 rounded-full blur-3xl"></div>
-                    
+
                     <!-- Logo -->
-                    <div class="flex items-center gap-3 mb-12">
-                        <div class="w-10 h-10 bg-[#c97e3a] rounded-lg flex items-center justify-center">
-                            <span class="text-white font-bold text-xl">K</span>
-                        </div>
-                        <div>
-                            <h1 class="text-white font-bold text-lg">KopiNusantara</h1>
-                            <p class="text-[#d4b896] text-xs">Marketplace UMKM Kopi</p>
-                        </div>
+                    <div class="cursor-pointer" @click="page = 'home'">
+                        <img src="{{ asset('image/logo3.png') }}" alt="Logo Kopi Nusantara" class="h-20 w-auto object-contain relative -left-9
                     </div>
-                    
+
                     <!-- Main Text -->
                     <div class="mb-8">
                         <h2 class="text-white text-3xl lg:text-4xl font-bold leading-tight mb-4">
@@ -42,7 +38,7 @@
                             Bergabung bersama ribuan pembeli yang<br>mendukung UMKM kopi nusantara.
                         </p>
                     </div>
-                    
+
                     <!-- Stats -->
                     <div class="grid grid-cols-3 gap-4 mb-12">
                         <div>
@@ -58,13 +54,13 @@
                             <p class="text-[#d4b896] text-xs">Daerah asal kopi</p>
                         </div>
                     </div>
-                    
+
                     <!-- Footer -->
                     <p class="text-[#a08060] text-xs absolute bottom-8 left-8 lg:left-12">
                         © 2026 KopiNusantara · Mendukung UMKM Indonesia
                     </p>
                 </div>
-                
+
                 <!-- Sisi Kanan - Form Login -->
                 <div class="flex-1 p-8 lg:p-12">
                     <!-- Toggle Buttons -->
@@ -72,65 +68,66 @@
                         <a href="{{ route('home') }}" class="text-[#3a2010] font-semibold border-b-2 border-[#c97e3a] pb-2">Masuk</a>
                         <a href="{{ route('register') }}" class="text-[#9a8070] pb-2 hover:text-[#3a2010] transition">Daftar</a>
                     </div>
-                    
+
                     <!-- Form Login -->
                     <form method="POST" action="{{ route('login') }}" class="space-y-6">
                         @csrf
-                        
+
                         <div>
                             <h2 class="text-[#3a2010] text-2xl font-bold mb-2">Selamat datang kembali</h2>
                             <p class="text-[#9a8070] text-sm">Masuk untuk melanjutkan belanja kopi pilihan</p>
                         </div>
-                        
+
                         <!-- Email Input -->
                         <div>
                             <label class="block text-[#7a6050] text-sm mb-2">Email atau nomor HP</label>
-                            <input type="email" name="email" value="{{ old('email') }}" 
-                                   class="w-full px-4 py-3 border-2 border-[#c97e3a] rounded-lg focus:outline-none focus:border-[#a06020] transition"
-                                   placeholder="Masukkan email  ">
+                            <input type="email" name="email" value="{{ old('email') }}"
+                                class="w-full px-4 py-3 border-2 border-[#c97e3a] rounded-lg focus:outline-none focus:border-[#a06020] transition"
+                                placeholder="Masukkan email  ">
                             @error('email')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                             @enderror
                         </div>
-                        
+
                         <!-- Password Input -->
                         <div>
                             <label class="block text-[#7a6050] text-sm mb-2">Kata sandi</label>
                             <div class="relative">
                                 <input type="password" name="password" id="password"
-                                       class="w-full px-4 py-3 border border-[#e0d8cc] rounded-lg focus:outline-none focus:border-[#c97e3a] transition"
-                                       placeholder="••••••••">
+                                    class="w-full px-4 py-3 border border-[#e0d8cc] rounded-lg focus:outline-none focus:border-[#c97e3a] transition"
+                                    placeholder="••••••••">
                                 <button type="button" id="togglePassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-[#9a8070] hover:text-[#3a2010]">
                                     👁️
                                 </button>
                             </div>
                             @error('password')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                             @enderror
                         </div>
-                        
+
                         <!-- Submit Button -->
-                        <button type="submit" 
-                                class="w-full bg-[#c97e3a] hover:bg-[#a06020] text-white font-semibold py-3 rounded-lg transition duration-200">
+                        <button type="submit"
+                            class="w-full bg-[#c97e3a] hover:bg-[#a06020] text-white font-semibold py-3 rounded-lg transition duration-200">
                             Masuk
                         </button>
-                        
+
                         <!-- Register Link -->
                         <p class="text-center text-[#9a8070] text-sm">
-                            Belum punya akun? 
+                            Belum punya akun?
                             <a href="{{ route('register') }}" class="text-[#c97e3a] hover:underline font-semibold">Daftar sekarang</a>
-                        </p>                    </form>
+                        </p>
+                    </form>
                 </div>
-                
+
             </div>
         </div>
     </div>
-    
+
     <!-- Toggle Password Script -->
     <script>
         const togglePassword = document.querySelector('#togglePassword');
         const password = document.querySelector('#password');
-        
+
         if (togglePassword) {
             togglePassword.addEventListener('click', function() {
                 const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
@@ -140,4 +137,5 @@
         }
     </script>
 </body>
+
 </html>

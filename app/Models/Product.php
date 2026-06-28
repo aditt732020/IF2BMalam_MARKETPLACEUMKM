@@ -108,4 +108,13 @@ class Product extends Model
     {
         return $this->hasMany(Order::class);
     }
+
+    // --- TAMBAHKAN KODE BARU DI SINI ---
+    /**
+     * Relasi ke model ProductReview (Satu produk bisa memiliki banyak ulasan)
+     */
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(ProductReview::class);
+    }
 }

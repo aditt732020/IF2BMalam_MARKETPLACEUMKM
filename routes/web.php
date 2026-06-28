@@ -8,6 +8,8 @@ use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\SellerController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\HomeController;
+// --- IMPORT CONTROLLER BARU DI SINI ---
+use App\Http\Controllers\ReviewController;
 
 // ==================== PUBLIC / GUEST ROUTES ====================
 // Halaman Utama/Landing Page sekarang bisa diakses siapa saja (Guest & Auth)
@@ -33,6 +35,9 @@ Route::middleware('auth')->group(function () {
     // Fitur Proses Checkout Terintegrasi
     Route::post('/checkout', [HomeController::class, 'processCheckout'])->name('checkout');
     Route::post('/profile', [HomeController::class, 'updateProfile'])->name('profile.update');
+
+    // --- TAMBAHKAN ROUTE ULASAN DI SINI (Di dalam middleware auth) ---
+    Route::post('/review/store', [ReviewController::class, 'store'])->name('review.store');
 });
 
 // ==================== ADMIN ROUTES ====================
@@ -58,5 +63,3 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 });
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
-
-
