@@ -656,6 +656,13 @@
     </main>
 
     <main x-show="page === 'cart'" x-cloak class="max-w-7xl mx-auto px-6 py-8">
+         <div class="flex items-center gap-2 text-sm text-gray-500 mb-6 cursor-pointer hover:text-gray-800" @click="page = 'home'">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            <span class="font-semibold">Beranda</span>
+        </div>
+        
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         
         <div class="lg:col-span-2 space-y-4">
@@ -663,7 +670,7 @@
                 <svg class="w-5 h-5 text-[#c57d38]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
                 </svg>
-                Keranjang Belanja Belanjaan Anda
+                Keranjang Belanja
             </h2>
 
             <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden divide-y divide-gray-100">
