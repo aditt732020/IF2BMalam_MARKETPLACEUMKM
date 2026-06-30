@@ -35,8 +35,10 @@ $initProduct = $firstProduct ? [
 @endphp
 
 <body class="bg-[#fdf9f4]" x-data="{
+
     page: 'home',
     isPaymentOpen: false,
+    isPaymentFromCart: false,
     isLoading: false,
     isProfileDropdownOpen: false,
     userProfile: {
@@ -130,30 +132,30 @@ $initProduct = $firstProduct ? [
     }
 }">
 
-    <nav class="bg-[#EAE0CF] border-b border-gray-100 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+  <nav class="bg-[#EAE0CF] border-b border-gray-100 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        
+        {{-- SISI KIRI: Logo Baru Kopi Nusantara Transparan --}}
+        <div class="flex items-center cursor-pointer" @click="page = 'home'">
+            <img src="{{ asset('image/logo3.png') }}" alt="Logo Kopi Nusantara" class="h-20 w-auto object-contain">
+        </div>
 
-            {{-- SISI KIRI: Logo Baru Kopi Nusantara Transparan --}}
-            <div class="flex items-center cursor-pointer" @click="page = 'home'">
-                <img src="{{ asset('image/logo3.png') }}" alt="Logo Kopi Nusantara" class="h-20 w-auto object-contain">
+        {{-- SISI TENGAH: Menu Navigasi --}}
+        <div class="hidden md:flex items-center gap-8 text-sm font-medium">
+            <a href="#" @click.prevent="page = 'home'" :class="page === 'home' ? 'text-[#c57d38]' : 'text-gray-500 hover:text-gray-800'">Beranda</a>
+            <a href="#" @click.prevent="page = 'home'" class="text-gray-500 hover:text-gray-800">Toko UMKM</a>
+            <a href="#" @click.prevent="page = 'home'" class="text-gray-500 hover:text-gray-800">Tentang Kami</a>
+        </div>
+
+        {{-- SISI KANAN: Keranjang & Profil/Login --}}
+        <div class="flex items-center gap-6 relative">
+            <div class="text-gray-700 hover:text-[#c57d38] cursor-pointer transition relative" 
+                 @click="if (@js(auth()->check())) { page = 'cart' } else { window.location.href = '{{ route('login') }}' }">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                </svg>
+                <span x-show="cartCount > 0" class="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold" x-text="cartCount"></span>
             </div>
-
-            {{-- SISI TENGAH: Menu Navigasi --}}
-            <div class="hidden md:flex items-center gap-8 text-sm font-medium">
-                <a href="#" @click.prevent="page = 'home'" :class="page === 'home' ? 'text-[#c57d38]' : 'text-gray-500 hover:text-gray-800'">Beranda</a>
-                <a href="#" @click.prevent="page = 'home'" class="text-gray-500 hover:text-gray-800">Toko UMKM</a>
-                <a href="#" @click.prevent="page = 'home'" class="text-gray-500 hover:text-gray-800">Tentang Kami</a>
-            </div>
-
-            {{-- SISI KANAN: Keranjang & Profil/Login --}}
-            <div class="flex items-center gap-6 relative">
-                <div class="text-gray-700 hover:text-[#c57d38] cursor-pointer transition relative"
-                    @click="if (@js(auth()->check())) { page = 'cart' } else { window.location.href = '{{ route('login') }}' }">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                    </svg>
-                    <span x-show="cartCount > 0" class="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold" x-text="cartCount"></span>
-                </div>
 
                 @auth
                 <div class="relative" @click.away="isProfileDropdownOpen = false">
@@ -181,8 +183,8 @@ $initProduct = $firstProduct ? [
                             Edit Profil
                         </a>
 
-                        <a href="{{ route('logout') }}"
-                            class="flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 font-semibold transition">
+                        <a href="{{ route('logout') }}" 
+                        class="flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 font-semibold transition">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                             </svg>
@@ -196,10 +198,10 @@ $initProduct = $firstProduct ? [
                 <a href="{{ route('login') }}" class="bg-[#c57d38] hover:bg-[#a66528] text-white px-5 py-2 rounded-xl text-xs font-bold transition shadow-sm">
                     Masuk
                 </a>
-                @endguest
-            </div>
+            @endguest
         </div>
-    </nav>
+    </div>
+</nav>
     @if (session('success'))
     <div class="max-w-7xl mx-auto px-6 pt-4">
         <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{{ session('success') }}</div>
@@ -235,8 +237,8 @@ $initProduct = $firstProduct ? [
                     <h2 class="text-3xl lg:text-4xl font-extrabold text-[#3a1f0b] leading-tight mb-4">Temukan kopi terbaik dari UMKM pilihan</h2>
                     <p class="text-gray-600 text-sm mb-8">Dari petani ke cangkir — dukung pelaku usaha kopi nusantara.</p>
                     <div class="flex flex-wrap gap-3">
-                        <button class="bg-[#c57d38] hover:bg-[#a66528] text-white px-6 py-2.5 rounded-lg text-sm font-semibold transition" @click="searchQuery = ''">Belanja Sekarang</button>
-                        <button class="border border-[#c57d38] text-[#c57d38] hover:bg-[#c57d38]/5 px-6 py-2.5 rounded-lg text-sm font-semibold transition">Kenali UMKM</button>
+                        <button class="bg-[#c57d38] hover:bg-[#a66528] text-white px-6 py-2.5 rounded-lg text-sm font-semibold transition" @click="page = 'toko'; searchQuery = ''; selectedCategory = ''; window.scrollTo({ top: 0, behavior: 'smooth' })">Belanja Sekarang</button>
+                        <button class="border border-[#c57d38] text-[#c57d38] hover:bg-[#c57d38]/5 px-6 py-2.5 rounded-lg text-sm font-semibold transition" @click="page = 'tentang'; window.scrollTo({ top: 0, behavior: 'smooth' })">Kenali UMKM</button>
                     </div>
                 </div>
                 <div class="w-full lg:w-[420px] h-[240px] rounded-xl overflow-hidden shadow-md">
@@ -249,10 +251,10 @@ $initProduct = $firstProduct ? [
             <form method="GET" action="{{ route('home') }}" class="flex gap-3">
                 <div class="flex-1">
                     <input type="text" name="search" x-model="searchQuery" placeholder="Cari kopi, daerah asal, atau nama toko..."
-                        class="w-full px-4 py-3 bg-[#f3ece2] text-sm text-gray-700 placeholder-gray-400 rounded-lg focus:outline-none border border-transparent focus:border-[#c57d38]/30">
+                           class="w-full px-4 py-3 bg-[#f3ece2] text-sm text-gray-700 placeholder-gray-400 rounded-lg focus:outline-none border border-transparent focus:border-[#c57d38]/30">
                 </div>
                 @if (request('category'))
-                <input type="hidden" name="category" value="{{ request('category') }}">
+                    <input type="hidden" name="category" value="{{ request('category') }}">
                 @endif
                 <a href="{{ route('home') }}" class="bg-[#f3ece2] hover:bg-[#ebd8bc] text-gray-600 px-6 py-3 rounded-lg text-sm font-medium transition flex items-center">Reset</a>
                 <button type="submit" class="bg-[#c57d38] hover:bg-[#a66528] text-white px-8 py-3 rounded-lg text-sm font-semibold transition">Cari</button>
@@ -262,7 +264,6 @@ $initProduct = $firstProduct ? [
         <section class="max-w-7xl mx-auto px-6 py-6">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="font-bold text-gray-800 text-base">Kategori produk</h3>
-                <a href="#" class="text-xs text-[#c57d38] font-medium hover:underline">Lihat semua</a>
             </div>
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
                 @php
@@ -291,10 +292,6 @@ $initProduct = $firstProduct ? [
 
         <section class="max-w-7xl mx-auto px-6 py-6">
             <div class="flex justify-between items-center mb-4">
-                <div>
-                    <h3 class="font-bold text-gray-800 text-base">Produk UMKM Kopi</h3>
-                    <p class="text-xs text-gray-400 mt-0.5">{{ $products->count() }} produk tersedia dari database</p>
-                </div>
                 <span class="text-xs text-[#c57d38] font-medium" x-show="filteredProducts.length < products.length" x-text="filteredProducts.length + ' ditampilkan'"></span>
             </div>
 
@@ -335,7 +332,6 @@ $initProduct = $firstProduct ? [
                         <div class="flex items-center gap-3 mb-4">
                             <span class="inline-flex rounded-full border px-3 py-1 text-xs font-bold" :class="group.badge" x-text="group.label"></span>
                             <span class="text-xs text-gray-400" x-text="group.items.length + ' produk'"></span>
-                            <a :href="'{{ url('/') }}?category=' + group.key" class="ml-auto text-xs font-semibold text-[#c57d38] hover:underline">Lihat semua</a>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                             <template x-for="product in group.items" :key="product.id">
@@ -375,7 +371,6 @@ $initProduct = $firstProduct ? [
         <section class="max-w-7xl mx-auto px-6 py-6 mb-16">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="font-bold text-gray-800 text-base">UMKM unggulan</h3>
-                <a href="#" class="text-xs text-[#c57d38] font-medium hover:underline">Lihat semua</a>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 @forelse ($umkmShops as $shop)
@@ -392,6 +387,132 @@ $initProduct = $firstProduct ? [
                 @endforelse
             </div>
         </section>
+    </main>
+
+    <main x-show="page === 'toko'" x-cloak class="max-w-7xl mx-auto px-6 py-8">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-6 cursor-pointer hover:text-gray-800" @click="page = 'home'">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            <span class="font-semibold">Beranda</span>
+        </div>
+
+        <div class="mb-8">
+            <h2 class="text-2xl font-extrabold text-gray-800 mb-1">Produk UMKM</h2>
+            <p class="text-sm text-gray-400" x-text="filteredProducts.length + ' produk tersedia'"></p>
+        </div>
+
+        <div class="mb-6">
+            <input type="text" x-model="searchQuery" placeholder="Cari kopi, daerah asal, atau nama toko..."
+                   class="w-full px-4 py-3 bg-[#f3ece2] text-sm text-gray-700 placeholder-gray-400 rounded-lg focus:outline-none border border-transparent focus:border-[#c57d38]/30">
+        </div>
+
+        <div class="flex flex-wrap gap-2 mb-8">
+            <button type="button" @click="selectedCategory = ''"
+                    :class="!selectedCategory ? 'bg-[#c57d38] text-white border-[#c57d38]' : 'bg-white text-gray-600 border-gray-200 hover:border-[#c57d38]/40'"
+                    class="px-4 py-2 rounded-full text-xs font-semibold border transition">Semua</button>
+            @foreach ($categories as $key => $label)
+                <button type="button" @click="selectedCategory = '{{ $key }}'"
+                        :class="selectedCategory === '{{ $key }}' ? 'bg-[#c57d38] text-white border-[#c57d38]' : 'bg-white text-gray-600 border-gray-200 hover:border-[#c57d38]/40'"
+                        class="px-4 py-2 rounded-full text-xs font-semibold border transition">{{ $label }}</button>
+            @endforeach
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <template x-for="product in filteredProducts" :key="product.id">
+                <div class="bg-white rounded-xl overflow-hidden border border-gray-100 flex flex-col cursor-pointer hover:shadow-md transition"
+                     @click="selectProduct(product)">
+                    <div class="relative h-44 bg-gray-100 overflow-hidden">
+                        <img :src="product.image_url" :alt="product.name" loading="lazy"
+                             x-on:error="imageFallback($event, product.fallback_image)"
+                             class="w-full h-full object-cover">
+                        <span class="absolute left-3 top-3 inline-flex rounded-full border px-2 py-0.5 text-[10px] font-bold shadow-sm" :class="product.category_badge" x-text="product.category_label"></span>
+                    </div>
+                    <div class="p-4 flex-1 flex flex-col justify-between">
+                        <div>
+                            <h4 class="font-bold text-gray-800 text-sm mb-0.5" x-text="product.name"></h4>
+                            <p class="text-gray-400 text-xs mb-2" x-text="product.shop_name"></p>
+                        </div>
+                        <div>
+                            <span class="text-[#c57d38] font-bold text-sm block mb-1" x-text="'Rp ' + product.price.toLocaleString('id-ID')"></span>
+                            <p class="text-[11px] text-gray-400"><span x-text="product.orders_count + ' terjual'"></span></p>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <div x-show="filteredProducts.length === 0" class="text-center py-12 text-gray-400 text-sm">
+            @if ($products->isEmpty())
+                Belum ada produk di database. Login sebagai admin untuk menambahkan produk, atau jalankan: <code class="text-xs bg-gray-100 px-2 py-1 rounded">php artisan db:seed --class=MarketplaceSeeder</code>
+            @else
+                Tidak ada produk yang cocok dengan pencarian atau filter.
+            @endif
+        </div>
+    </main>
+
+    <main x-show="page === 'tentang'" x-cloak class="max-w-7xl mx-auto px-6 py-8">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-6 cursor-pointer hover:text-gray-800" @click="page = 'home'">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            <span class="font-semibold">Beranda</span>
+        </div>
+
+        <div class="bg-[#DCC3AA] rounded-2xl p-8 lg:p-12 flex flex-col lg:flex-row items-center gap-10 mb-10">
+            <div class="flex-1">
+                <span class="inline-block px-3 py-1 bg-[#ede0c8] text-[#936232] text-xs font-semibold rounded-full mb-4">Tentang KopiNusantara</span>
+                <h2 class="text-3xl lg:text-4xl font-extrabold text-[#3a1f0b] leading-tight mb-4">Marketplace kopi untuk mendukung UMKM Indonesia</h2>
+                <p class="text-gray-600 text-sm leading-relaxed">KopiNusantara hadir sebagai jembatan antara pelaku usaha kopi lokal dan pecinta kopi di seluruh nusantara. Kami percaya setiap cangkir kopi bercerita — dari petani, roaster, hingga pengrajin UMKM di daerah Anda.</p>
+            </div>
+            <div class="w-full lg:w-[380px] h-[220px] rounded-xl overflow-hidden shadow-md shrink-0">
+                <img src="https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=600&q=80" alt="Petani kopi Indonesia" class="w-full h-full object-cover">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
+            <div class="bg-white border border-gray-100 rounded-2xl p-6 text-center">
+                <p class="text-3xl font-black text-[#c57d38] mb-1">{{ $products->count() }}+</p>
+                <p class="text-sm font-semibold text-gray-800">Produk Kopi</p>
+                <p class="text-xs text-gray-400 mt-1">Curated dari UMKM terpercaya</p>
+            </div>
+            <div class="bg-white border border-gray-100 rounded-2xl p-6 text-center">
+                <p class="text-3xl font-black text-[#c57d38] mb-1">{{ $umkmShops->count() }}+</p>
+                <p class="text-sm font-semibold text-gray-800">UMKM Mitra</p>
+                <p class="text-xs text-gray-400 mt-1">Pengrajin kopi dari berbagai daerah</p>
+            </div>
+            <div class="bg-white border border-gray-100 rounded-2xl p-6 text-center">
+                <p class="text-3xl font-black text-[#c57d38] mb-1">100%</p>
+                <p class="text-sm font-semibold text-gray-800">Kopi Lokal</p>
+                <p class="text-xs text-gray-400 mt-1">Produk asli Indonesia</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
+            <div class="bg-white border border-gray-100 rounded-2xl p-6">
+                <h3 class="text-lg font-bold text-gray-800 mb-3">Visi Kami</h3>
+                <p class="text-sm text-gray-600 leading-relaxed">Menjadi platform marketplace kopi terdepan yang memberdayakan UMKM kopi Indonesia agar dapat bersaing di pasar digital dan dikenal luas oleh pecinta kopi di seluruh nusantara.</p>
+            </div>
+            <div class="bg-white border border-gray-100 rounded-2xl p-6">
+                <h3 class="text-lg font-bold text-gray-800 mb-3">Misi Kami</h3>
+                <ul class="text-sm text-gray-600 leading-relaxed space-y-2 list-disc list-inside">
+                    <li>Menghubungkan pembeli langsung dengan UMKM kopi lokal</li>
+                    <li>Memberikan platform digital yang mudah dan aman untuk bertransaksi</li>
+                    <li>Mendorong pertumbuhan ekonomi kreatif di sektor kopi Indonesia</li>
+                </ul>
+            </div>
+        </div>
+
+        </div>
+
+        <div class="bg-white border border-gray-100 rounded-2xl p-8 text-center">
+            <h3 class="text-xl font-bold text-gray-800 mb-2">Siap menemukan kopi favorit Anda?</h3>
+            <p class="text-sm text-gray-500 mb-6">Jelajahi koleksi kopi terbaik dari UMKM pilihan di seluruh Indonesia.</p>
+            <button @click="page = 'toko'; searchQuery = ''; selectedCategory = ''; window.scrollTo({ top: 0, behavior: 'smooth' })"
+                    class="bg-[#c57d38] hover:bg-[#a66528] text-white px-8 py-3 rounded-xl text-sm font-bold transition shadow-sm">
+                Jelajahi Produk UMKM
+            </button>
+        </div>
     </main>
 
     <main x-show="page === 'detail'" x-cloak class="max-w-7xl mx-auto px-6 py-8">
@@ -617,15 +738,15 @@ $initProduct = $firstProduct ? [
     </main>
 
     <main x-show="page === 'cart'" x-cloak class="max-w-7xl mx-auto px-6 py-8">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-
-            <div class="lg:col-span-2 space-y-4">
-                <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2 mb-2">
-                    <svg class="w-5 h-5 text-[#c57d38]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                    </svg>
-                    Keranjang Belanja Belanjaan Anda
-                </h2>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        
+        <div class="lg:col-span-2 space-y-4">
+            <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2 mb-2">
+                <svg class="w-5 h-5 text-[#c57d38]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                </svg>
+                Keranjang Belanja Belanjaan Anda
+            </h2>
 
                 <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden divide-y divide-gray-100">
                     <template x-for="item in cartItems" :key="item.cart_id">
@@ -684,29 +805,29 @@ $initProduct = $firstProduct ? [
                 </div>
             </div>
 
-            <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm space-y-4 lg:mt-9">
-                <h3 class="font-bold text-gray-800 text-base">Ringkasan Belanja</h3>
-                <div class="space-y-2 text-xs">
-                    <div class="flex justify-between text-gray-500">
-                        <span>Total Barang</span>
-                        <span class="font-semibold text-gray-800" x-text="cartCount + ' Pcs'"></span>
-                    </div>
-                    <div class="flex justify-between text-gray-500">
-                        <span>Subtotal Produk</span>
-                        <span class="font-semibold text-gray-800" x-text="'Rp ' + cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0).toLocaleString('id-ID')"></span>
-                    </div>
-                    <div class="flex justify-between text-gray-500">
-                        <span>Biaya Layanan Sistem</span>
-                        <span class="font-semibold text-gray-800" x-text="cartItems.length > 0 ? 'Rp 1.000' : 'Rp 0'"></span>
-                    </div>
+        <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm space-y-4 lg:mt-9">
+            <h3 class="font-bold text-gray-800 text-base">Ringkasan Belanja</h3>
+            <div class="space-y-2 text-xs">
+                <div class="flex justify-between text-gray-500">
+                    <span>Total Barang</span>
+                    <span class="font-semibold text-gray-800" x-text="cartCount + ' Pcs'"></span>
                 </div>
-
-                <div class="pt-4 border-t border-dashed border-gray-100 flex justify-between items-center">
-                    <span class="text-xs font-bold text-gray-800">Total Pembayaran</span>
-                    <span class="text-[#c57d38] font-black text-lg" x-text="'Rp ' + (cartItems.length > 0 ? (cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0) + 1000) : 0).toLocaleString('id-ID')"></span>
+                <div class="flex justify-between text-gray-500">
+                    <span>Subtotal Produk</span>
+                    <span class="font-semibold text-gray-800" x-text="'Rp ' + cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0).toLocaleString('id-ID')"></span>
                 </div>
-
-                <button @click="if(cartItems.length > 0) { selectedId = cartItems[0].product_id; qty = cartItems[0].quantity; isPaymentOpen = true; }"
+                <div class="flex justify-between text-gray-500">
+                    <span>Biaya Layanan Sistem</span>
+                    <span class="font-semibold text-gray-800" x-text="cartItems.length > 0 ? 'Rp 1.000' : 'Rp 0'"></span>
+                </div>
+            </div>
+            
+            <div class="pt-4 border-t border-dashed border-gray-100 flex justify-between items-center">
+                <span class="text-xs font-bold text-gray-800">Total Pembayaran</span>
+                <span class="text-[#c57d38] font-black text-lg" x-text="'Rp ' + (cartItems.length > 0 ? (cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0) + 1000) : 0).toLocaleString('id-ID')"></span>
+            </div>
+            
+            <button @click="if(cartItems.length > 0) { selectedId = cartItems[0].product_id; qty = cartItems[0].quantity; isPaymentOpen = true; }" 
                     :disabled="cartItems.length === 0"
                     type="button"
                     class="w-full bg-[#c57d38] text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-[#a66528] transition text-xs text-center disabled:opacity-50 disabled:cursor-not-allowed">
@@ -774,52 +895,58 @@ $initProduct = $firstProduct ? [
     <div x-show="isPaymentOpen" class="fixed inset-0 z-[100] overflow-y-auto" style="display: none;" x-cloak>
         <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
             <div class="fixed inset-0 transition-opacity bg-black/60 backdrop-blur-sm" @click="isPaymentOpen = false"></div>
-
+            
             <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-xl sm:w-full">
                 <div class="bg-[#3a2010] px-6 py-4 flex justify-between items-center text-white">
                     <h3 class="text-base font-bold">Detail Pembayaran Instan</h3>
                     <button @click="isPaymentOpen = false" class="text-white/80 hover:text-white">✕</button>
                 </div>
 
-                <div class="px-6 py-5 space-y-5 max-h-[80vh] overflow-y-auto">
-                    <div class="bg-[#fdf3e7] p-4 rounded-xl border border-[#c57d38]/20 flex justify-between items-center">
-                        <div>
-                            <span class="text-xs text-gray-400 font-medium block">Kopi Pilihan</span>
-                            <span class="text-gray-800 font-bold text-sm" x-text="selectedProduct + ' (x' + qty + ')'"></span>
-                        </div>
-                        <div class="text-right">
-                            <span class="text-xs text-gray-400 font-medium block">Total Tagihan</span>
-                            <span class="text-[#c57d38] font-black text-base" x-text="'Rp ' + (selectedPrice * qty).toLocaleString('id-ID')"></span>
-                        </div>
+                <div class="space-y-2 text-xs border-b border-dashed border-gray-100 pb-4">
+                    <div class="flex justify-between text-gray-500">
+                        <span>Subtotal Produk</span>
+                        <span class="font-semibold text-gray-800" 
+                              x-text="'Rp ' + (isPaymentFromCart ? cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0) : (selectedPrice * qty)).toLocaleString('id-ID')"></span>
                     </div>
+                    <div class="flex justify-between text-gray-500">
+                        <span>Biaya Layanan</span>
+                        <span class="font-semibold text-gray-800">Rp 1.000</span>
+                    </div>
+                </div>
 
-                    <div>
-                        <label class="text-xs text-gray-500 font-bold uppercase tracking-wider block mb-2">Pilih Metode Pembayaran</label>
-                        <div class="grid grid-cols-2 gap-3">
-                            <label class="cursor-pointer">
-                                <input type="radio" name="pay" value="QRIS" x-model="paymentMethod" class="hidden peer">
-                                <div class="p-3 border rounded-xl flex flex-col items-center justify-center gap-1 peer-checked:border-[#c57d38] peer-checked:bg-[#c57d38]/5 transition">
-                                    <span class="font-extrabold text-sm text-gray-800">QRIS</span>
-                                    <span class="text-[10px] text-gray-400">E-Wallet / M-Banking</span>
-                                </div>
-                            </label>
-                            <label class="cursor-pointer">
-                                <input type="radio" name="pay" value="Transfer" x-model="paymentMethod" class="hidden peer">
-                                <div class="p-3 border rounded-xl flex flex-col items-center justify-center gap-1 peer-checked:border-[#c57d38] peer-checked:bg-[#c57d38]/5 transition">
-                                    <span class="font-extrabold text-sm text-gray-800">Transfer Bank</span>
-                                    <span class="text-[10px] text-gray-400">Virtual Account</span>
-                                </div>
-                            </label>
-                        </div>
+                <div class="flex justify-between items-center pt-2">
+                    <span class="text-xs font-bold text-gray-800">Total Tagihan</span>
+                    <span class="text-[#c57d38] font-black text-xl" 
+                          x-text="'Rp ' + (isPaymentFromCart ? (cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0) + 1000) : ((selectedPrice * qty) + 1000)).toLocaleString('id-ID')"></span>
+                </div>
+
+                <div>
+                    <label class="text-xs text-gray-500 font-bold uppercase tracking-wider block mb-2">Pilih Metode Pembayaran</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="pay" value="QRIS" x-model="paymentMethod" class="hidden peer">
+                            <div class="p-3 border rounded-xl flex flex-col items-center justify-center gap-1 peer-checked:border-[#c57d38] peer-checked:bg-[#c57d38]/5 transition">
+                                <span class="font-extrabold text-sm text-gray-800">QRIS</span>
+                                <span class="text-[10px] text-gray-400">E-Wallet / M-Banking</span>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="pay" value="Transfer" x-model="paymentMethod" class="hidden peer">
+                            <div class="p-3 border rounded-xl flex flex-col items-center justify-center gap-1 peer-checked:border-[#c57d38] peer-checked:bg-[#c57d38]/5 transition">
+                                <span class="font-extrabold text-sm text-gray-800">Transfer Bank</span>
+                                <span class="text-[10px] text-gray-400">Virtual Account</span>
+                            </div>
+                        </label>
                     </div>
+                </div>
 
                     <div x-show="paymentMethod === 'QRIS'" class="border border-gray-100 rounded-2xl p-5 bg-gray-50 text-center space-y-4">
                         <div class="text-xs font-bold text-gray-700 uppercase tracking-wide">Scan QR Code KopiNusantara</div>
-
+                        
                         <div class="w-44 h-44 bg-white p-2 border-2 border-gray-200 mx-auto rounded-xl shadow-inner flex items-center justify-center relative">
                             <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=KopiNusantaraUMKM" alt="QRIS Barcode" class="w-full h-full object-contain">
                         </div>
-
+                        
                         <div class="space-y-1">
                             <p class="text-xs text-gray-500">Mendukung: GoPay, OVO, Dana, LinkAja, BCA Mobile, dll.</p>
                             <p class="text-[11px] text-red-500 font-medium">Lakukan screenshot atau scan barcode di atas sebelum menekan tombol konfirmasi.</p>
@@ -828,7 +955,7 @@ $initProduct = $firstProduct ? [
 
                     <div x-show="paymentMethod === 'Transfer'" class="border border-gray-100 rounded-2xl p-5 bg-gray-50 space-y-4">
                         <label class="text-xs text-gray-500 font-bold uppercase tracking-wider block">Pilih Bank Transfer:</label>
-
+                        
                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
                             <button @click="selectedBank = 'BCA'" :class="selectedBank === 'BCA' ? 'border-[#c57d38] bg-[#c57d38]/5 font-bold text-[#c57d38]' : 'border-gray-200 bg-white text-gray-600'" type="button" class="p-2 border rounded-lg text-xs transition">BCA</button>
                             <button @click="selectedBank = 'Mandiri'" :class="selectedBank === 'Mandiri' ? 'border-[#c57d38] bg-[#c57d38]/5 font-bold text-[#c57d38]' : 'border-gray-200 bg-white text-gray-600'" type="button" class="p-2 border rounded-lg text-xs transition">Mandiri</button>
@@ -842,8 +969,8 @@ $initProduct = $firstProduct ? [
                                 <span class="font-extrabold text-gray-800" x-text="selectedBank + ' Virtual Account'"></span>
                             </div>
                             <div class="flex justify-between items-center bg-gray-50 px-3 py-2.5 rounded-lg border border-gray-100">
-                                <span class="font-mono text-sm tracking-wider font-bold text-gray-700"
-                                    x-text="selectedBank === 'BCA' ? '800113312511139' : (selectedBank === 'Mandiri' ? '700123312511139' : (selectedBank === 'BNI' ? '880233312511139' : '900143312511139'))"></span>
+                                <span class="font-mono text-sm tracking-wider font-bold text-gray-700" 
+                                      x-text="selectedBank === 'BCA' ? '800113312511139' : (selectedBank === 'Mandiri' ? '700123312511139' : (selectedBank === 'BNI' ? '880233312511139' : '900143312511139'))"></span>
                                 <button @click="alert('Nomor Virtual Account berhasil disalin!')" type="button" class="text-xs text-[#c57d38] font-bold hover:underline">Salin</button>
                             </div>
                             <ul class="text-[11px] text-gray-400 list-disc list-inside space-y-0.5">
@@ -856,15 +983,15 @@ $initProduct = $firstProduct ? [
                     <div class="pt-2 border-t border-dashed border-gray-200">
                         {{-- Bagian tombol yang tadinya error sekarang dipecah menggunakan struktur @auth Blade murni --}}
                         @auth
-                        <button type="button" class="w-full bg-[#c57d38] text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-[#a66528] transition flex items-center justify-center gap-2"
-                            :disabled="isLoading || !selectedId"
-                            @click="isLoading = true; submitCheckout();">
-                            <span x-text="isLoading ? 'Memproses Pesanan...' : 'Saya Sudah Melakukan Pembayaran'"></span>
-                        </button>
+                            <button type="button" class="w-full bg-[#c57d38] text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-[#a66528] transition flex items-center justify-center gap-2"
+                                    :disabled="isLoading || !selectedId"
+                                    @click="isLoading = true; submitCheckout();">
+                                <span x-text="isLoading ? 'Memproses Pesanan...' : 'Saya Sudah Melakukan Pembayaran'"></span>
+                            </button>
                         @else
-                        <a href="{{ route('login') }}" class="w-full bg-[#c57d38] text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-[#a66528] transition flex items-center justify-center gap-2 text-sm text-center">
-                            Silakan Login Terlebih Dahulu
-                        </a>
+                            <a href="{{ route('login') }}" class="w-full bg-[#c57d38] text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-[#a66528] transition flex items-center justify-center gap-2 text-sm text-center">
+                                Silakan Login Terlebih Dahulu
+                            </a>
                         @endauth
                     </div>
                 </div>
