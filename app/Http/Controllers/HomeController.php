@@ -9,6 +9,8 @@ use App\Models\Cart;
 use App\Models\ProductReview;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class HomeController extends Controller
 {
@@ -21,7 +23,8 @@ class HomeController extends Controller
         }
 
         $query = Product::query()
-            ->withCount('orders')
+            ->withAvg('reviews', 'rating')
+            ->withCount(['reviews', 'orders'])
             ->where('is_active', true)
             ->where('stock', '>', 0);
 
@@ -38,10 +41,7 @@ class HomeController extends Controller
         $productsJson = $products->map(fn(Product $p) => $this->formatProduct($p))->values();
         $umkmShops = $this->buildUmkmList();
         $categories = Product::categories();
-        $reviews = ProductReview::with(['user', 'product'])
-            ->latest()
-            ->take(10)
-            ->get();
+        $productReviews = $this->formatProductReviews();
 
         // AMBIL DATA KERANJANG REAL DARI DATABASE LAINNYA
         $realCartItems = [];
@@ -63,10 +63,8 @@ class HomeController extends Controller
                     ];
                 })->values()->toArray();
         }
-        $reviews = ProductReview::with(['user', 'product'])
-            ->latest()
-            ->take(10)
-            ->get();
+
+        $buyerOrders = $this->formatBuyerOrders();
 
         return view('home', [
             'user' => auth()->user(),
@@ -77,7 +75,9 @@ class HomeController extends Controller
             'activeCategory' => $activeCategory,
             'categoryStyles' => Product::categoryStyles(),
             'realCartItems' => $realCartItems,
-            'reviews' => $reviews,
+            'productReviews' => $productReviews,
+            'buyerOrders' => $buyerOrders,
+            'orderStatuses' => Order::statuses(),
         ]);
     }
 
@@ -113,9 +113,47 @@ class HomeController extends Controller
         return redirect()->route('home')->with('success', 'Item berhasil dihapus dari keranjang.');
     }
 
-    // UPDATE FUNGSI: Menampung Metode Pembayaran Alternatif (QRIS/Transfer)
+    public function updateProfile(Request $request)
+    {
+        $user = auth()->user();
+
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')->ignore($user->id),
+            ],
+            'phone' => 'required|string|max:20',
+            'address' => 'required|string|max:1000',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->route('home', ['page' => 'profile'])
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        $validated = $validator->validated();
+
+        $user->update([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'],
+            'address' => $validated['address'],
+        ]);
+
+        return redirect()->route('home', ['page' => 'profile'])
+            ->with('success', 'Profil berhasil diperbarui.');
+    }
+
     public function processCheckout(Request $request)
     {
+        if ($request->has('cart_ids') && is_array($request->cart_ids) && count($request->cart_ids) > 0) {
+            return $this->processCartCheckout($request);
+        }
+
         $validated = $request->validate([
             'product_id' => 'required|exists:products,id',
             'quantity' => 'required|integer|min:1',
@@ -132,7 +170,6 @@ class HomeController extends Controller
         }
 
         DB::transaction(function () use ($product, $validated) {
-            // Menghitung subtotal ditambah biaya layanan Rp 1.000 seperti di UI ringkasan
             $totalWithFees = ($product->price * $validated['quantity']) + 1000;
 
             Order::create([
@@ -141,21 +178,156 @@ class HomeController extends Controller
                 'quantity' => $validated['quantity'],
                 'total_price' => $totalWithFees,
                 'status' => 'pending',
-                // Anda bisa menambahkan kolom payment_method atau payment_bank di database orders jika ada, 
-                // atau mencatatnya di log / tabel detail transaksi pembayaran lainnya di sini.
             ]);
 
             $product->decrement('stock', $validated['quantity']);
 
-            // Jika barang dibeli via halaman checkout, hapus otomatis produk tersebut dari database keranjang user
             Cart::where('user_id', auth()->id())->where('product_id', $product->id)->delete();
         });
 
         return redirect()->route('home')->with('success', 'Pesanan berhasil dibuat! Admin akan memproses verifikasi sistem pembayaran ' . $validated['payment_method'] . ' Anda.');
     }
 
+    private function processCartCheckout(Request $request)
+    {
+        $validated = $request->validate([
+            'cart_ids' => 'required|array|min:1',
+            'cart_ids.*' => 'required|integer|exists:carts,id',
+            'payment_method' => 'required|string',
+            'payment_bank' => 'nullable|string',
+        ]);
+
+        $carts = Cart::with('product')
+            ->where('user_id', auth()->id())
+            ->whereIn('id', $validated['cart_ids'])
+            ->get();
+
+        if ($carts->count() !== count(array_unique($validated['cart_ids']))) {
+            return back()->withErrors([
+                'checkout' => 'Beberapa item keranjang tidak valid atau bukan milik Anda.',
+            ]);
+        }
+
+        foreach ($carts as $cart) {
+            if (!$cart->product || !$cart->product->is_active) {
+                return back()->withErrors([
+                    'checkout' => 'Produk "' . ($cart->product->name ?? 'tidak diketahui') . '" tidak tersedia.',
+                ]);
+            }
+
+            if ($cart->product->stock < $cart->quantity) {
+                return back()->withErrors([
+                    'checkout' => 'Stok "' . $cart->product->name . '" tidak mencukupi. Tersedia: ' . $cart->product->stock . ' unit.',
+                ]);
+            }
+        }
+
+        $itemCount = $carts->count();
+
+        DB::transaction(function () use ($carts) {
+            $isFirst = true;
+
+            foreach ($carts as $cart) {
+                $product = $cart->product;
+                $itemTotal = $product->price * $cart->quantity;
+                $totalWithFees = $itemTotal + ($isFirst ? 1000 : 0);
+                $isFirst = false;
+
+                Order::create([
+                    'buyer_id' => auth()->id(),
+                    'product_id' => $product->id,
+                    'quantity' => $cart->quantity,
+                    'total_price' => $totalWithFees,
+                    'status' => 'pending',
+                ]);
+
+                $product->decrement('stock', $cart->quantity);
+                $cart->delete();
+            }
+        });
+
+        return redirect()->route('home')->with(
+            'success',
+            'Pesanan ' . $itemCount . ' produk berhasil dibuat! Admin akan memproses verifikasi sistem pembayaran ' . $validated['payment_method'] . ' Anda.'
+        );
+    }
+
+    public function cancelOrder(Order $order)
+    {
+        if ($order->buyer_id !== auth()->id()) {
+            abort(403);
+        }
+
+        if ($order->status !== 'pending') {
+            return redirect()->route('home', ['page' => 'orders'])->withErrors([
+                'checkout' => 'Pesanan hanya dapat dibatalkan saat masih menunggu pembayaran.',
+            ]);
+        }
+
+        DB::transaction(function () use ($order) {
+            if ($order->product) {
+                $order->product->increment('stock', $order->quantity);
+            }
+
+            $order->update(['status' => 'cancelled']);
+        });
+
+        return redirect()->route('home', ['page' => 'orders'])
+            ->with('success', 'Pesanan #' . $order->id . ' berhasil dibatalkan.');
+    }
+
+    private function formatBuyerOrders(): array
+    {
+        if (!auth()->check()) {
+            return [];
+        }
+
+        return Order::with('product')
+            ->where('buyer_id', auth()->id())
+            ->latest()
+            ->get()
+            ->map(function (Order $order) {
+                return [
+                    'id' => $order->id,
+                    'product_id' => $order->product_id,
+                    'product_name' => $order->product->name ?? 'Produk tidak ditemukan',
+                    'product_image' => $order->product?->resolveImageUrl() ?? self::DEFAULT_IMAGE,
+                    'shop_name' => $order->product->shop_name ?? 'UMKM Lokal',
+                    'quantity' => $order->quantity,
+                    'total_price' => (int) $order->total_price,
+                    'status' => $order->status,
+                    'status_label' => $order->status_label,
+                    'created_at' => $order->created_at->format('d M Y, H:i'),
+                    'created_at_human' => $order->created_at->diffForHumans(),
+                ];
+            })
+            ->values()
+            ->toArray();
+    }
+
+    private function formatProductReviews(): array
+    {
+        return ProductReview::with('user')
+            ->latest()
+            ->get()
+            ->map(function (ProductReview $review) {
+                return [
+                    'id' => $review->id,
+                    'product_id' => $review->product_id,
+                    'user_name' => $review->user->name ?? 'Pengguna',
+                    'rating' => (int) $review->rating,
+                    'comment' => $review->comment,
+                    'created_at_human' => $review->created_at->diffForHumans(),
+                ];
+            })
+            ->values()
+            ->toArray();
+    }
+
     private function formatProduct(Product $product): array
     {
+        $averageRating = round((float) ($product->reviews_avg_rating ?? 0), 1);
+
         return [
             'id' => $product->id,
             'name' => $product->name,
@@ -169,6 +341,8 @@ class HomeController extends Controller
             'category_label' => $product->category_label,
             'category_badge' => $product->category_style['badge'],
             'orders_count' => (int) $product->orders_count,
+            'average_rating' => $averageRating,
+            'reviews_count' => (int) ($product->reviews_count ?? 0),
         ];
     }
 

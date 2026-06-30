@@ -23,7 +23,6 @@ class Product extends Model
         return [
             'biji_kopi' => 'Biji Kopi',
             'kopi_bubuk' => 'Kopi Bubuk',
-            'cold_brew' => 'Cold Brew',
             'lainnya' => 'Lainnya',
         ];
     }
@@ -43,10 +42,6 @@ class Product extends Model
             'kopi_bubuk' => [
                 'badge' => 'bg-[#eaf7f2] text-[#2d8a62] border-[#c5e8d8]',
                 'icon_bg' => 'bg-[#70c9a5]/20 text-[#30976f]',
-            ],
-            'cold_brew' => [
-                'badge' => 'bg-[#eef4fc] text-[#3d7ecb] border-[#d0e3f7]',
-                'icon_bg' => 'bg-[#7cb0ec]/20 text-[#3d7ecb]',
             ],
             'lainnya' => [
                 'badge' => 'bg-gray-100 text-gray-600 border-gray-200',
@@ -75,11 +70,6 @@ class Product extends Model
                 'https://images.unsplash.com/photo-1495474472287-4d489827aafd?w=600&h=440&fit=crop&q=80',
                 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=600&h=440&fit=crop&q=80',
                 'https://images.unsplash.com/photo-1461023058943-07fcbe16d930?w=600&h=440&fit=crop&q=80',
-            ],
-            'cold_brew' => [
-                'https://images.unsplash.com/photo-1517487881594-278f144ad4db?w=600&h=440&fit=crop&q=80',
-                'https://images.unsplash.com/photo-1497935586351-b67a49e012bf?w=600&h=440&fit=crop&q=80',
-                'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&h=440&fit=crop&q=80',
             ],
             'lainnya' => [
                 'https://images.unsplash.com/photo-1498804103079-a5661f93402b?w=600&h=440&fit=crop&q=80',

@@ -34,18 +34,6 @@ class MarketplaceSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
-            [
-                'name' => 'Cold Brew Signature Mandheling 250ml',
-                'category' => 'cold_brew',
-                'shop_name' => 'Brew Nusantara',
-                'price' => 35000,
-                'stock' => 15,
-                'description' => 'Kopi hitam cold brew siap minum, diseduh selama 16 jam menggunakan biji Arabika Mandheling untuk menghasilkan rasa yang smooth dan tidak terlalu asam.',
-                'image_url' => 'https://images.unsplash.com/photo-1517701604599-bb29b565090c?w=600&h=440&fit=crop&q=80',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]
         ]);
     }
 }

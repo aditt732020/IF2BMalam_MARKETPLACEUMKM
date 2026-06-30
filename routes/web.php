@@ -35,6 +35,7 @@ Route::middleware('auth')->group(function () {
     // Fitur Proses Checkout Terintegrasi
     Route::post('/checkout', [HomeController::class, 'processCheckout'])->name('checkout');
     Route::post('/profile', [HomeController::class, 'updateProfile'])->name('profile.update');
+    Route::patch('/orders/{order}/cancel', [HomeController::class, 'cancelOrder'])->name('orders.cancel');
 
     // --- TAMBAHKAN ROUTE ULASAN DI SINI (Di dalam middleware auth) ---
     Route::post('/review/store', [ReviewController::class, 'store'])->name('review.store');

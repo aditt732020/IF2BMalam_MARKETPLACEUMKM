@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('products', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('category'); // biji_kopi, kopi_bubuk, cold_brew, lainnya
+            $table->string('category'); // biji_kopi, kopi_bubuk, lainnya
             $table->string('shop_name');
             $table->decimal('price', 12, 2);
             $table->integer('stock')->default(0);

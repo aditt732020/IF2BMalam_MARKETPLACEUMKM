@@ -36,19 +36,23 @@ $initProduct = $firstProduct ? [
 
 <body class="bg-[#fdf9f4]" x-data="{
 
-    page: 'home',
+    page: @js(request('page', 'home')),
     isPaymentOpen: false,
     isPaymentFromCart: false,
     isLoading: false,
     isProfileDropdownOpen: false,
     userProfile: {
-        nama: @js(auth()->user()->name ?? 'Pengguna'),
-        email: @js(auth()->user()->email ?? ''),
-        telepon: @js(auth()->user()->phone ?? ''),
-        alamat: @js(auth()->user()->address ?? '')
+        nama: @js(old('name', auth()->user()->name ?? 'Pengguna')),
+        email: @js(old('email', auth()->user()->email ?? '')),
+        telepon: @js(old('phone', auth()->user()->phone ?? '')),
+        alamat: @js(old('address', auth()->user()->address ?? ''))
     },
     products: @js($productsJson),
     cartItems: @js($realCartItems),
+    selectedCartIds: @js(array_column($realCartItems, 'cart_id')),
+    buyerOrders: @js($buyerOrders),
+    productReviews: @js($productReviews),
+    orderStatusFilter: '',
     paymentMethod: 'QRIS',
     selectedBank: 'BCA',
     qty: 1,
@@ -78,6 +82,85 @@ $initProduct = $firstProduct ? [
     // Fitur Menghitung Total Item di Keranjang Belanja
     get cartCount() { 
         return this.cartItems.reduce((sum, item) => sum + item.quantity, 0); 
+    },
+
+    get selectedCartItems() {
+        return this.cartItems.filter(item => this.selectedCartIds.includes(item.cart_id));
+    },
+
+    get selectedCartCount() {
+        return this.selectedCartItems.reduce((sum, item) => sum + item.quantity, 0);
+    },
+
+    get selectedSubtotal() {
+        return this.selectedCartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    },
+
+    get allCartSelected() {
+        return this.cartItems.length > 0 && this.selectedCartIds.length === this.cartItems.length;
+    },
+
+    toggleSelectAll() {
+        if (this.allCartSelected) {
+            this.selectedCartIds = [];
+        } else {
+            this.selectedCartIds = this.cartItems.map(item => item.cart_id);
+        }
+    },
+
+    toggleCartItem(cartId) {
+        if (this.selectedCartIds.includes(cartId)) {
+            this.selectedCartIds = this.selectedCartIds.filter(id => id !== cartId);
+        } else {
+            this.selectedCartIds.push(cartId);
+        }
+    },
+
+    get filteredBuyerOrders() {
+        if (!this.orderStatusFilter) return this.buyerOrders;
+        return this.buyerOrders.filter(order => order.status === this.orderStatusFilter);
+    },
+
+    get orderStats() {
+        return {
+            total: this.buyerOrders.length,
+            pending: this.buyerOrders.filter(o => o.status === 'pending').length,
+            active: this.buyerOrders.filter(o => ['paid', 'shipped'].includes(o.status)).length,
+            completed: this.buyerOrders.filter(o => o.status === 'completed').length,
+        };
+    },
+
+    orderStatusClass(status) {
+        const map = {
+            pending: 'bg-amber-50 text-amber-700 border-amber-200',
+            paid: 'bg-blue-50 text-blue-700 border-blue-200',
+            shipped: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+            completed: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+            cancelled: 'bg-red-50 text-red-700 border-red-200',
+        };
+        return map[status] || 'bg-gray-50 text-gray-600 border-gray-200';
+    },
+
+    orderProgressStep(status) {
+        const steps = { pending: 1, paid: 2, shipped: 3, completed: 4, cancelled: 0 };
+        return steps[status] ?? 0;
+    },
+
+    get selectedProductReviews() {
+        if (!this.selectedId) return [];
+        return this.productReviews.filter(review => review.product_id === this.selectedId);
+    },
+
+    get selectedAverageRating() {
+        const reviews = this.selectedProductReviews;
+        if (reviews.length === 0) return 0;
+        const total = reviews.reduce((sum, review) => sum + review.rating, 0);
+        return Math.round((total / reviews.length) * 10) / 10;
+    },
+
+    ratingStars(rating) {
+        const rounded = Math.round(parseFloat(rating) || 0);
+        return '★'.repeat(rounded) + '☆'.repeat(Math.max(0, 5 - rounded));
     },
     
     // Fitur Mengelompokkan Produk Berdasarkan Kategori untuk Tampilan Beranda
@@ -112,14 +195,31 @@ $initProduct = $firstProduct ? [
         this.page = 'detail';
     },
 
-    // Mengirimkan data form transaksi secara riil ke backend
     submitCheckout() {
-        if (!this.selectedId) return;
-        document.getElementById('checkout-product-id').value = this.selectedId;
-        document.getElementById('checkout-quantity').value = this.qty;
+        const form = document.getElementById('checkout-form');
+        form.querySelectorAll('input[name=\'cart_ids[]\']').forEach(el => el.remove());
+
         document.getElementById('checkout-method').value = this.paymentMethod;
         document.getElementById('checkout-bank').value = this.selectedBank;
-        document.getElementById('checkout-form').submit();
+
+        if (this.isPaymentFromCart) {
+            if (this.selectedCartIds.length === 0) return;
+            document.getElementById('checkout-product-id').value = '';
+            document.getElementById('checkout-quantity').value = '';
+            this.selectedCartIds.forEach(id => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'cart_ids[]';
+                input.value = id;
+                form.appendChild(input);
+            });
+        } else {
+            if (!this.selectedId) return;
+            document.getElementById('checkout-product-id').value = this.selectedId;
+            document.getElementById('checkout-quantity').value = this.qty;
+        }
+
+        form.submit();
     },
 
     shopInitials(name) {
@@ -184,6 +284,10 @@ $initProduct = $firstProduct ? [
                             Edit Profil
                         </a>
 
+                        <a href="#" @click.prevent="page = 'orders'; isProfileDropdownOpen = false" class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-[#fdf3e7] hover:text-[#c57d38] transition font-medium">
+                            Pesanan Saya
+                        </a>
+
                         <a href="{{ route('logout') }}" 
                             class="flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 font-semibold transition">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -240,10 +344,7 @@ $initProduct = $firstProduct ? [
                         Tentang Kami
                     </a>
                 </div>
-            </nav>
-        </div>
-    </div>
-</nav>
+    </nav>
     @if (session('success'))
     <div class="max-w-7xl mx-auto px-6 pt-4">
         <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{{ session('success') }}</div>
@@ -298,7 +399,6 @@ $initProduct = $firstProduct ? [
                 $catStyles = [
                 'biji_kopi' => ['bg' => 'bg-[#dfb287]/20', 'text' => 'text-[#be8146]'],
                 'kopi_bubuk' => ['bg' => 'bg-[#70c9a5]/20', 'text' => 'text-[#30976f]'],
-                'cold_brew' => ['bg' => 'bg-[#7cb0ec]/20', 'text' => 'text-[#3d7ecb]'],
                 'lainnya' => ['bg' => 'bg-gray-100', 'text' => 'text-gray-600'],
                 ];
                 @endphp
@@ -345,6 +445,10 @@ $initProduct = $firstProduct ? [
                                 </div>
                                 <div>
                                     <span class="text-[#c57d38] font-bold text-sm block mb-1" x-text="'Rp ' + product.price.toLocaleString('id-ID')"></span>
+                                    <p class="text-[11px] text-yellow-500 mb-0.5" x-show="product.reviews_count > 0">
+                                        <span x-text="'★ ' + product.average_rating"></span>
+                                        <span class="text-gray-400" x-text="'(' + product.reviews_count + ' ulasan)'"></span>
+                                    </p>
                                     <p class="text-[11px] text-gray-400"><span x-text="(product.orders_count || 0) + ' terjual'"></span></p>
                                 </div>
                             </div>
@@ -378,6 +482,10 @@ $initProduct = $firstProduct ? [
                                         </div>
                                         <div>
                                             <span class="text-[#c57d38] font-bold text-sm block mb-1" x-text="'Rp ' + product.price.toLocaleString('id-ID')"></span>
+                                            <p class="text-[11px] text-yellow-500 mb-0.5" x-show="product.reviews_count > 0">
+                                                <span x-text="'★ ' + product.average_rating"></span>
+                                                <span class="text-gray-400" x-text="'(' + product.reviews_count + ' ulasan)'"></span>
+                                            </p>
                                             <p class="text-[11px] text-gray-400"><span x-text="(product.orders_count || 0) + ' terjual'"></span></p>
                                         </div>
                                     </div>
@@ -463,6 +571,10 @@ $initProduct = $firstProduct ? [
                         </div>
                         <div>
                             <span class="text-[#c57d38] font-bold text-sm block mb-1" x-text="'Rp ' + product.price.toLocaleString('id-ID')"></span>
+                            <p class="text-[11px] text-yellow-500 mb-0.5" x-show="product.reviews_count > 0">
+                                <span x-text="'★ ' + product.average_rating"></span>
+                                <span class="text-gray-400" x-text="'(' + product.reviews_count + ' ulasan)'"></span>
+                            </p>
                             <p class="text-[11px] text-gray-400"><span x-text="product.orders_count + ' terjual'"></span></p>
                         </div>
                     </div>
@@ -603,7 +715,8 @@ $initProduct = $firstProduct ? [
 
                     <div class="flex items-center gap-1 text-sm text-gray-500 mb-6">
                         <span class="text-yellow-500 text-base">★</span>
-                        <span class="font-bold text-gray-700" x-text="selectedCategoryLabel"></span>
+                        <span class="font-bold text-gray-700" x-text="selectedAverageRating > 0 ? selectedAverageRating : 'Belum ada rating'"></span>
+                        <span x-show="selectedProductReviews.length > 0" class="text-gray-400" x-text="'(' + selectedProductReviews.length + ' ulasan)'"></span>
                         <span>• Stok: <span x-text="selectedStock"></span> pcs</span>
                     </div>
 
@@ -640,7 +753,7 @@ $initProduct = $firstProduct ? [
                             class="flex-1 border-2 border-[#c57d38] text-[#c57d38] font-bold py-3.5 rounded-xl hover:bg-[#c57d38]/5 transition text-sm disabled:opacity-50">
                             + Tambah ke Keranjang
                         </button>
-                        <button @click="if (@js(auth()->check())) { if(selectedId) isPaymentOpen = true; } else { window.location.href = '{{ route('login') }}' }"
+                        <button @click="if (@js(auth()->check())) { if(selectedId) { isPaymentFromCart = false; isPaymentOpen = true; } } else { window.location.href = '{{ route('login') }}' }"
                             :disabled="!selectedId"
                             class="flex-1 bg-[#c57d38] text-white font-bold py-3.5 rounded-xl hover:bg-[#a66528] transition shadow-md text-sm disabled:opacity-50">
                             Beli Sekarang
@@ -719,43 +832,22 @@ $initProduct = $firstProduct ? [
                         <h4 class="font-bold text-lg mb-4">Ulasan Pembeli</h4>
 
                         <div class="space-y-4">
-
-                            @forelse($reviews as $review)
-                            <div class="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
-
-                                <div class="flex justify-between items-start mb-2">
-
-                                    <div>
-                                        <h5 class="font-semibold text-gray-800">
-                                            {{ $review->user->name ?? 'Pengguna' }}
-                                        </h5>
-
-                                        <p class="text-yellow-500">
-                                            {{ str_repeat('★', $review->rating) }}
-                                        </p>
+                            <template x-for="review in selectedProductReviews" :key="review.id">
+                                <div class="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <div>
+                                            <h5 class="font-semibold text-gray-800" x-text="review.user_name"></h5>
+                                            <p class="text-yellow-500" x-text="ratingStars(review.rating)"></p>
+                                        </div>
+                                        <span class="text-xs text-gray-400" x-text="review.created_at_human"></span>
                                     </div>
-
-                                    <span class="text-xs text-gray-400">
-                                        {{ $review->created_at->diffForHumans() }}
-                                    </span>
-
+                                    <p class="text-gray-600 mb-2" x-text="review.comment"></p>
                                 </div>
+                            </template>
 
-                                <p class="text-gray-600 mb-2">
-                                    {{ $review->comment }}
-                                </p>
-
-                                <p class="text-xs text-gray-400">
-                                    Produk: {{ $review->product->name ?? '-' }}
-                                </p>
-
+                            <div x-show="selectedProductReviews.length === 0" class="bg-white border rounded-2xl p-6 text-center text-gray-500">
+                                Belum ada ulasan untuk produk ini.
                             </div>
-                            @empty
-                            <div class="bg-white border rounded-2xl p-6 text-center text-gray-500">
-                                Belum ada ulasan.
-                            </div>
-                            @endforelse
-
                         </div>
 
                     </div>
@@ -764,21 +856,18 @@ $initProduct = $firstProduct ? [
                     <div>
                         <div class="bg-white border border-gray-100 rounded-2xl p-8 text-center shadow-sm sticky top-6">
 
-                            <h3 class="text-6xl font-black text-gray-800 mb-2">
-                                5.0
-                            </h3>
+                            <h3 class="text-6xl font-black text-gray-800 mb-2"
+                                x-text="selectedAverageRating > 0 ? selectedAverageRating : '-'"></h3>
 
-                            <p class="text-yellow-500 text-xl mb-2">
-                                ★★★★★
-                            </p>
+                            <p class="text-yellow-500 text-xl mb-2"
+                                x-text="selectedAverageRating > 0 ? ratingStars(selectedAverageRating) : '☆☆☆☆☆'"></p>
 
                             <p class="text-sm text-gray-500">
                                 Rata-rata ulasan produk
                             </p>
 
-                            <div class="mt-4 text-xs text-gray-400">
-                                {{ $reviews->count() }} ulasan
-                            </div>
+                            <div class="mt-4 text-xs text-gray-400"
+                                x-text="selectedProductReviews.length + ' ulasan'"></div>
 
                         </div>
                     </div>
@@ -810,8 +899,27 @@ $initProduct = $firstProduct ? [
             </h2>
 
                 <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden divide-y divide-gray-100">
+                    <div x-show="cartItems.length > 0" class="px-6 py-3 bg-gray-50/80 flex items-center gap-3 border-b border-gray-100">
+                        <label class="flex items-center gap-2 cursor-pointer select-none">
+                            <input type="checkbox"
+                                :checked="allCartSelected"
+                                @change="toggleSelectAll()"
+                                class="w-4 h-4 rounded border-gray-300 text-[#c57d38] focus:ring-[#c57d38]/30 cursor-pointer">
+                            <span class="text-xs font-semibold text-gray-600">Pilih Semua</span>
+                        </label>
+                        <span class="text-[11px] text-gray-400" x-text="selectedCartIds.length + ' dari ' + cartItems.length + ' dipilih'"></span>
+                    </div>
+
                     <template x-for="item in cartItems" :key="item.cart_id">
-                        <div class="p-6 flex flex-col sm:flex-row items-start sm:items-center gap-5 hover:bg-gray-50/50 transition">
+                        <div class="p-6 flex flex-col sm:flex-row items-start sm:items-center gap-5 hover:bg-gray-50/50 transition"
+                            :class="selectedCartIds.includes(item.cart_id) ? 'bg-[#fdf3e7]/30' : ''">
+
+                            <label class="flex items-center shrink-0 cursor-pointer pt-1 sm:pt-0">
+                                <input type="checkbox"
+                                    :checked="selectedCartIds.includes(item.cart_id)"
+                                    @change="toggleCartItem(item.cart_id)"
+                                    class="w-4 h-4 rounded border-gray-300 text-[#c57d38] focus:ring-[#c57d38]/30 cursor-pointer">
+                            </label>
 
                             <div class="w-20 h-20 bg-gray-50 rounded-xl overflow-hidden flex-shrink-0 border border-gray-100">
                                 <img :src="item.image_url" class="w-full h-full object-cover" :alt="item.name">
@@ -870,32 +978,31 @@ $initProduct = $firstProduct ? [
             <h3 class="font-bold text-gray-800 text-base">Ringkasan Belanja</h3>
             <div class="space-y-2 text-xs">
                 <div class="flex justify-between text-gray-500">
-                    <span>Total Barang</span>
-                    <span class="font-semibold text-gray-800" x-text="cartCount + ' Pcs'"></span>
+                    <span>Total Barang Dipilih</span>
+                    <span class="font-semibold text-gray-800" x-text="selectedCartCount + ' Pcs'"></span>
                 </div>
                 <div class="flex justify-between text-gray-500">
                     <span>Subtotal Produk</span>
-                    <span class="font-semibold text-gray-800" x-text="'Rp ' + cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0).toLocaleString('id-ID')"></span>
+                    <span class="font-semibold text-gray-800" x-text="'Rp ' + selectedSubtotal.toLocaleString('id-ID')"></span>
                 </div>
                 <div class="flex justify-between text-gray-500">
                     <span>Biaya Layanan Sistem</span>
-                    <span class="font-semibold text-gray-800" x-text="cartItems.length > 0 ? 'Rp 1.000' : 'Rp 0'"></span>
+                    <span class="font-semibold text-gray-800" x-text="selectedCartIds.length > 0 ? 'Rp 1.000' : 'Rp 0'"></span>
                 </div>
             </div>
             
             <div class="pt-4 border-t border-dashed border-gray-100 flex justify-between items-center">
                 <span class="text-xs font-bold text-gray-800">Total Pembayaran</span>
-                <span class="text-[#c57d38] font-black text-lg" x-text="'Rp ' + (cartItems.length > 0 ? (cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0) + 1000) : 0).toLocaleString('id-ID')"></span>
+                <span class="text-[#c57d38] font-black text-lg" x-text="'Rp ' + (selectedCartIds.length > 0 ? (selectedSubtotal + 1000) : 0).toLocaleString('id-ID')"></span>
             </div>
             
-             <button @click="if (cartItems.length > 0) { 
+             <button @click="if (selectedCartIds.length > 0) { 
             isPaymentFromCart = true; 
             paymentMethod = 'QRIS'; 
             selectedBank = 'BCA'; 
-            selectedId = cartItems[0].product_id; 
             isPaymentOpen = true; 
                     }"  
-                    :disabled="cartItems.length === 0"
+                    :disabled="selectedCartIds.length === 0"
                     type="button"
                     class="w-full bg-[#c57d38] text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-[#a66528] transition text-xs text-center disabled:opacity-50 disabled:cursor-not-allowed">
                     Lanjut ke Pembayaran
@@ -920,8 +1027,19 @@ $initProduct = $firstProduct ? [
         </div>
 
         <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-            <h2 class="text-xl font-bold text-gray-800 mb-2">Edit Profil Pengguna</h2>
-            <p class="text-xs text-gray-400 mb-6">Perbarui informasi profil Anda untuk keperluan pengiriman dan transaksi yang aman.</p>
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800 mb-1">Edit Profil Pengguna</h2>
+                    <p class="text-xs text-gray-400">Perbarui informasi profil Anda untuk keperluan pengiriman dan transaksi yang aman.</p>
+                </div>
+                <button type="button" @click="page = 'orders'"
+                    class="inline-flex items-center justify-center gap-2 border border-[#c57d38] text-[#c57d38] font-bold px-4 py-2.5 rounded-xl hover:bg-[#c57d38]/5 transition text-xs shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                    Lihat Pesanan Saya
+                </button>
+            </div>
 
             <form method="POST" action="{{ route('profile.update') }}" class="space-y-4">
                 @csrf
@@ -929,21 +1047,27 @@ $initProduct = $firstProduct ? [
                     <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Nama Lengkap</label>
                     <input type="text" name="name" x-model="userProfile.nama" required
                         class="w-full px-4 py-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl focus:outline-none border border-gray-200 focus:border-[#c57d38]/40">
+                    @error('name') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Alamat Email</label>
                     <input type="email" name="email" x-model="userProfile.email" required
                         class="w-full px-4 py-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl focus:outline-none border border-gray-200 focus:border-[#c57d38]/40">
+                    @error('email') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Nomor Telepon</label>
                     <input type="text" name="phone" x-model="userProfile.telepon" required
-                        class="w-full px-4 py-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl focus:outline-none border border-gray-200 focus:border-[#c57d38]/40">
+                        class="w-full px-4 py-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl focus:outline-none border border-gray-200 focus:border-[#c57d38]/40"
+                        placeholder="Contoh: 0812-3456-7890">
+                    @error('phone') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Alamat Pengiriman</label>
                     <textarea name="address" x-model="userProfile.alamat" rows="3" required
-                        class="w-full px-4 py-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl focus:outline-none border border-gray-200 focus:border-[#c57d38]/40"></textarea>
+                        class="w-full px-4 py-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl focus:outline-none border border-gray-200 focus:border-[#c57d38]/40"
+                        placeholder="Jl. Contoh No. 123, Kota, Provinsi"></textarea>
+                    @error('address') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
                 </div>
 
                 <div class="pt-4 flex gap-3">
@@ -955,6 +1079,155 @@ $initProduct = $firstProduct ? [
                     </button>
                 </div>
             </form>
+        </div>
+        @endguest
+    </main>
+
+    <main x-show="page === 'orders'" x-cloak class="max-w-5xl mx-auto px-6 py-8">
+        @guest
+        <div class="bg-white border border-gray-100 rounded-2xl p-8 text-center">
+            <p class="text-gray-500 mb-4">Silakan masuk untuk melihat status pesanan Anda.</p>
+            <a href="{{ route('login') }}" class="inline-block bg-[#c57d38] text-white px-6 py-2.5 rounded-xl text-sm font-bold">Masuk</a>
+        </div>
+        @else
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-6 cursor-pointer hover:text-gray-800" @click="page = 'home'">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            <span class="font-semibold">Kembali ke Beranda</span>
+        </div>
+
+        <div class="mb-6">
+            <h2 class="text-2xl font-extrabold text-gray-800 mb-1">Pesanan Saya</h2>
+            <p class="text-sm text-gray-400">Pantau status pembayaran dan pengiriman pesanan Anda</p>
+        </div>
+
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+            <div class="bg-white border border-gray-100 rounded-xl p-4 text-center">
+                <p class="text-2xl font-black text-[#c57d38]" x-text="orderStats.total"></p>
+                <p class="text-[11px] text-gray-500 font-medium mt-0.5">Total Pesanan</p>
+            </div>
+            <div class="bg-white border border-gray-100 rounded-xl p-4 text-center">
+                <p class="text-2xl font-black text-amber-600" x-text="orderStats.pending"></p>
+                <p class="text-[11px] text-gray-500 font-medium mt-0.5">Menunggu Verifikasi</p>
+            </div>
+            <div class="bg-white border border-gray-100 rounded-xl p-4 text-center">
+                <p class="text-2xl font-black text-indigo-600" x-text="orderStats.active"></p>
+                <p class="text-[11px] text-gray-500 font-medium mt-0.5">Diproses / Dikirim</p>
+            </div>
+            <div class="bg-white border border-gray-100 rounded-xl p-4 text-center">
+                <p class="text-2xl font-black text-emerald-600" x-text="orderStats.completed"></p>
+                <p class="text-[11px] text-gray-500 font-medium mt-0.5">Selesai</p>
+            </div>
+        </div>
+
+        <div class="flex flex-wrap gap-2 mb-6">
+            <button type="button" @click="orderStatusFilter = ''"
+                :class="!orderStatusFilter ? 'bg-[#c57d38] text-white border-[#c57d38]' : 'bg-white text-gray-600 border-gray-200 hover:border-[#c57d38]/40'"
+                class="px-4 py-2 rounded-full text-xs font-semibold border transition">
+                Semua
+            </button>
+            @foreach ($orderStatuses as $key => $label)
+            <button type="button" @click="orderStatusFilter = '{{ $key }}'"
+                :class="orderStatusFilter === '{{ $key }}' ? 'bg-[#c57d38] text-white border-[#c57d38]' : 'bg-white text-gray-600 border-gray-200 hover:border-[#c57d38]/40'"
+                class="px-4 py-2 rounded-full text-xs font-semibold border transition">
+                {{ $label }}
+            </button>
+            @endforeach
+        </div>
+
+        <div class="space-y-4">
+            <template x-for="order in filteredBuyerOrders" :key="order.id">
+                <div class="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
+                    <div class="px-5 py-4 border-b border-gray-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <div>
+                            <p class="text-xs text-gray-400">Pesanan <span class="font-bold text-gray-700" x-text="'#' + order.id"></span></p>
+                            <p class="text-[11px] text-gray-400 mt-0.5" x-text="order.created_at + ' (' + order.created_at_human + ')'"></p>
+                        </div>
+                        <span class="inline-flex items-center self-start px-3 py-1 rounded-full text-[11px] font-bold border"
+                            :class="orderStatusClass(order.status)"
+                            x-text="order.status_label"></span>
+                    </div>
+
+                    <div class="p-5 flex flex-col sm:flex-row gap-4">
+                        <div class="w-20 h-20 bg-gray-50 rounded-xl overflow-hidden flex-shrink-0 border border-gray-100">
+                            <img :src="order.product_image" :alt="order.product_name" class="w-full h-full object-cover"
+                                x-on:error="imageFallback($event)">
+                        </div>
+
+                        <div class="flex-1 min-w-0">
+                            <h4 class="font-bold text-gray-800 text-sm truncate" x-text="order.product_name"></h4>
+                            <p class="text-xs text-gray-400 mt-0.5" x-text="order.shop_name"></p>
+                            <div class="flex flex-wrap items-center gap-3 mt-2 text-xs text-gray-500">
+                                <span x-text="order.quantity + ' pcs'"></span>
+                                <span class="text-[#c57d38] font-extrabold" x-text="'Rp ' + order.total_price.toLocaleString('id-ID')"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="px-5 pb-5" x-show="order.status !== 'cancelled'">
+                        <div class="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">Progres Pesanan</p>
+                            <div class="flex items-center justify-between relative">
+                                <div class="absolute top-3 left-0 right-0 h-0.5 bg-gray-200 mx-6"></div>
+                                <div class="absolute top-3 left-0 h-0.5 bg-[#c57d38] mx-6 transition-all"
+                                    :style="'width: ' + Math.max(0, (orderProgressStep(order.status) - 1) / 3 * 100) + '%'"></div>
+
+                                <template x-for="(step, index) in [
+                                    { key: 'pending', label: 'Menunggu' },
+                                    { key: 'paid', label: 'Dibayar' },
+                                    { key: 'shipped', label: 'Dikirim' },
+                                    { key: 'completed', label: 'Selesai' }
+                                ]" :key="step.key">
+                                    <div class="flex flex-col items-center relative z-10 flex-1">
+                                        <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold border-2 transition"
+                                            :class="orderProgressStep(order.status) >= (index + 1)
+                                                ? 'bg-[#c57d38] border-[#c57d38] text-white'
+                                                : 'bg-white border-gray-300 text-gray-400'"
+                                            x-text="index + 1"></div>
+                                        <span class="text-[9px] text-gray-500 mt-1.5 text-center font-medium" x-text="step.label"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                        <form x-show="order.status === 'pending'" :action="'/orders/' + order.id + '/cancel'" method="POST"
+                            onsubmit="return confirm('Apakah Anda yakin ingin membatalkan pesanan ini? Stok produk akan dikembalikan.')"
+                            class="flex justify-end mt-4">
+                            @csrf
+                            @method('PATCH')
+                            <button type="submit"
+                                class="inline-flex items-center gap-1.5 text-red-600 hover:text-red-700 text-xs font-bold border border-red-200 hover:bg-red-50 px-4 py-2 rounded-xl transition">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                                Batalkan Pesanan
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="px-5 pb-5" x-show="order.status === 'cancelled'">
+                        <div class="bg-red-50 border border-red-100 rounded-xl p-3 text-xs text-red-600">
+                            Pesanan ini telah dibatalkan. Hubungi admin jika Anda memiliki pertanyaan.
+                        </div>
+                    </div>
+                </div>
+            </template>
+
+            <div x-show="filteredBuyerOrders.length === 0" class="bg-white border border-gray-100 rounded-2xl p-12 text-center" x-cloak>
+                <div class="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-[#c57d38]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                </div>
+                <h3 class="text-sm font-bold text-gray-800" x-text="orderStatusFilter ? 'Tidak ada pesanan dengan status ini' : 'Belum Ada Pesanan'"></h3>
+                <p class="text-xs text-gray-400 mt-1 max-w-xs mx-auto" x-text="orderStatusFilter ? 'Coba filter status lain atau lihat semua pesanan.' : 'Pesanan Anda akan muncul di sini setelah melakukan pembayaran.'"></p>
+                <button @click="orderStatusFilter = ''; page = 'toko'" type="button"
+                    class="mt-4 inline-flex items-center justify-center bg-[#c57d38] text-white text-xs font-bold px-4 py-2 rounded-xl shadow-md hover:bg-[#a66528] transition"
+                    x-show="!orderStatusFilter">
+                    Mulai Belanja
+                </button>
+            </div>
         </div>
         @endguest
     </main>
@@ -976,7 +1249,7 @@ $initProduct = $firstProduct ? [
                     <div class="flex justify-between text-gray-500">
                         <span>Subtotal Produk</span>
                         <span class="font-semibold text-gray-800" 
-                              x-text="'Rp ' + (isPaymentFromCart ? cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0) : (selectedPrice * qty)).toLocaleString('id-ID')"></span>
+                              x-text="'Rp ' + (isPaymentFromCart ? selectedSubtotal : (selectedPrice * qty)).toLocaleString('id-ID')"></span>
                     </div>
                     <div class="flex justify-between text-gray-500">
                         <span>Biaya Layanan</span>
@@ -987,7 +1260,7 @@ $initProduct = $firstProduct ? [
                 <div class="flex justify-between items-center pt-2">
                     <span class="text-xs font-bold text-gray-800">Total Tagihan</span>
                     <span class="text-[#c57d38] font-black text-xl" 
-                          x-text="'Rp ' + (isPaymentFromCart ? (cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0) + 1000) : ((selectedPrice * qty) + 1000)).toLocaleString('id-ID')"></span>
+                          x-text="'Rp ' + (isPaymentFromCart ? (selectedSubtotal + 1000) : ((selectedPrice * qty) + 1000)).toLocaleString('id-ID')"></span>
                 </div>
 
                 <div>
@@ -1054,8 +1327,8 @@ $initProduct = $firstProduct ? [
                     <div class="pt-2 border-t border-dashed border-gray-200">
                     @auth
                         <button type="button" class="w-full bg-[#c57d38] text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-[#a66528] transition flex items-center justify-center gap-2"
-                                :disabled="isLoading || (isPaymentFromCart ? cartItems.length === 0 : !selectedId)"
-                                @click="isLoading = true; if(isPaymentFromCart) { document.getElementById('checkout-product-id').value = 'cart'; }; submitCheckout();">
+                                :disabled="isLoading || (isPaymentFromCart ? selectedCartIds.length === 0 : !selectedId)"
+                                @click="isLoading = true; submitCheckout();">
                             <span x-text="isLoading ? 'Memproses Pesanan...' : 'Saya Sudah Melakukan Pembayaran'"></span>
                         </button>
                     @else
