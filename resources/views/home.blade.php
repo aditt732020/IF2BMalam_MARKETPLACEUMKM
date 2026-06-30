@@ -599,20 +599,19 @@ $initProduct = $firstProduct ? [
             <div class="flex gap-8 border-b border-gray-100 text-sm font-medium mb-6">
                 <button @click="detailTab = 'deskripsi'" :class="detailTab === 'deskripsi' ? 'text-[#c57d38] border-b-2 border-[#c57d38] pb-3' : 'text-gray-400 pb-3'">Deskripsi</button>
                 <button @click="detailTab = 'ulasan'" :class="detailTab === 'ulasan' ? 'text-[#c57d38] border-b-2 border-[#c57d38] pb-3' : 'text-gray-400 pb-3'">Ulasan</button>
-                <button @click="detailTab = 'tanya'" :class="detailTab === 'tanya' ? 'text-[#c57d38] border-b-2 border-[#c57d38] pb-3' : 'text-gray-400 pb-3'">Tanya Jawab</button>
-                <button @click="detailTab = 'kirim'" :class="detailTab === 'kirim' ? 'text-[#c57d38] border-b-2 border-[#c57d38] pb-3' : 'text-gray-400 pb-3'">Pengiriman</button>
+               
             </div>
 
             <div x-show="detailTab === 'deskripsi'" class="text-sm text-gray-600 space-y-2">
                 <p x-text="selectedDescription"></p>
             </div>
 
-            <div x-show="detailTab === 'ulasan'" class="flex flex-col md:flex-row gap-8" x-cloak>
+            <div x-show="detailTab === 'ulasan'" class="w-full" x-cloak>
 
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
 
                     <!-- KIRI -->
-                    <div class="lg:col-span-2">
+                    <div class="lg:col-span-3">
 
                         @auth
                         <form method="POST" action="{{ route('review.store') }}"
