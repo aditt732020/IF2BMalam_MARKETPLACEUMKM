@@ -132,7 +132,7 @@ $initProduct = $firstProduct ? [
     }
 }">
 
-  <nav class="bg-[#EAE0CF] border-b border-gray-100 sticky top-0 z-50">
+  <nav x-data="{ isMobileMenuOpen: false }" class="bg-[#EAE0CF] border-b border-gray-100 sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
         
         {{-- SISI KIRI: Logo Baru Kopi Nusantara Transparan --}}
@@ -147,8 +147,9 @@ $initProduct = $firstProduct ? [
             <a href="#" @click.prevent="page = 'tentang'" class="text-gray-500 hover:text-gray-800">Tentang Kami</a>
         </div>
 
-        {{-- SISI KANAN: Keranjang & Profil/Login --}}
-        <div class="flex items-center gap-6 relative">
+       {{-- SISI KANAN: Keranjang, Profil, Menu Mobile --}}
+        <div class="flex items-center gap-4 sm:gap-6 relative">
+            {{-- Icon Keranjang --}}
             <div class="text-gray-700 hover:text-[#c57d38] cursor-pointer transition relative" 
                  @click="if (@js(auth()->check())) { page = 'cart' } else { window.location.href = '{{ route('login') }}' }">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -184,7 +185,7 @@ $initProduct = $firstProduct ? [
                         </a>
 
                         <a href="{{ route('logout') }}" 
-                        class="flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 font-semibold transition">
+                            class="flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 font-semibold transition">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                             </svg>
@@ -199,6 +200,47 @@ $initProduct = $firstProduct ? [
                     Masuk
                 </a>
             @endguest
+
+                        {{-- TOMBOL MOBILE --}}
+                        <button @click="isMobileMenuOpen = !isMobileMenuOpen" type="button" class="inline-flex md:hidden items-center justify-center p-2 rounded-xl text-gray-700 hover:text-[#c57d38] hover:bg-black/5 focus:outline-none transition">
+                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                {{-- Icon Garis Tiga (Hamburger) saat menu ditutup --}}
+                                <path x-show="!isMobileMenuOpen" stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                                {{-- Icon Silang (X) saat menu dibuka --}}
+                                <path x-show="isMobileMenuOpen" x-cloak stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div x-show="isMobileMenuOpen" x-cloak
+                    x-transition:enter="transition ease-out duration-200"
+                    x-transition:enter-start="opacity-0 -translate-y-4"
+                    x-transition:enter-end="opacity-100 translate-y-0"
+                    x-transition:leave="transition ease-in duration-150"
+                    x-transition:leave-start="opacity-100 translate-y-0"
+                    x-transition:leave-end="opacity-0 -translate-y-4"
+                    class="md:hidden bg-[#EAE0CF] border-t border-black/5 px-6 py-4 space-y-3 shadow-inner">
+                    
+                    <a href="#" @click.prevent="page = 'home'; isMobileMenuOpen = false" 
+                    :class="page === 'home' ? 'bg-[#c57d38]/10 text-[#c57d38] font-bold' : 'text-gray-600 font-medium'" 
+                    class="block px-4 py-2.5 rounded-xl text-sm transition">
+                        Beranda
+                    </a>
+                    
+                    <a href="#" @click.prevent="page = 'toko'; window.scrollTo({ top: 0, behavior: 'smooth' }); isMobileMenuOpen = false" 
+                    :class="page === 'toko' ? 'bg-[#c57d38]/10 text-[#c57d38] font-bold' : 'text-gray-600 font-medium'" 
+                    class="block px-4 py-2.5 rounded-xl text-sm transition">
+                        Produk UMKM
+                    </a>
+                    
+                    <a href="#" @click.prevent="page = 'tentang'; window.scrollTo({ top: 0, behavior: 'smooth' }); isMobileMenuOpen = false" 
+                    :class="page === 'tentang' ? 'bg-[#c57d38]/10 text-[#c57d38] font-bold' : 'text-gray-600 font-medium'" 
+                    class="block px-4 py-2.5 rounded-xl text-sm transition">
+                        Tentang Kami
+                    </a>
+                </div>
+            </nav>
         </div>
     </div>
 </nav>
@@ -751,6 +793,13 @@ $initProduct = $firstProduct ? [
     </main>
 
     <main x-show="page === 'cart'" x-cloak class="max-w-7xl mx-auto px-6 py-8">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-6 cursor-pointer hover:text-gray-800" @click="page = 'home'">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            <span class="font-semibold">Beranda</span>
+        </div>
+        
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         
         <div class="lg:col-span-2 space-y-4">
@@ -758,7 +807,7 @@ $initProduct = $firstProduct ? [
                 <svg class="w-5 h-5 text-[#c57d38]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
                 </svg>
-                Keranjang Belanja Belanjaan Anda
+                Keranjang Belanja
             </h2>
 
                 <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden divide-y divide-gray-100">
@@ -840,7 +889,13 @@ $initProduct = $firstProduct ? [
                 <span class="text-[#c57d38] font-black text-lg" x-text="'Rp ' + (cartItems.length > 0 ? (cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0) + 1000) : 0).toLocaleString('id-ID')"></span>
             </div>
             
-            <button @click="if(cartItems.length > 0) { selectedId = cartItems[0].product_id; qty = cartItems[0].quantity; isPaymentOpen = true; }" 
+             <button @click="if (cartItems.length > 0) { 
+            isPaymentFromCart = true; 
+            paymentMethod = 'QRIS'; 
+            selectedBank = 'BCA'; 
+            selectedId = cartItems[0].product_id; 
+            isPaymentOpen = true; 
+                    }"  
                     :disabled="cartItems.length === 0"
                     type="button"
                     class="w-full bg-[#c57d38] text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-[#a66528] transition text-xs text-center disabled:opacity-50 disabled:cursor-not-allowed">
@@ -909,10 +964,13 @@ $initProduct = $firstProduct ? [
         <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
             <div class="fixed inset-0 transition-opacity bg-black/60 backdrop-blur-sm" @click="isPaymentOpen = false"></div>
             
-            <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-xl sm:w-full">
-                <div class="bg-[#3a2010] px-6 py-4 flex justify-between items-center text-white">
-                    <h3 class="text-base font-bold">Detail Pembayaran Instan</h3>
-                    <button @click="isPaymentOpen = false" class="text-white/80 hover:text-white">✕</button>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+            <div class="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl space-y-6 sm:align-middle">
+                
+                <div class="flex justify-between items-center border-b border-gray-100 pb-3">
+                    <h3 class="text-base font-bold text-gray-800">Detail Pembayaran</h3>
+                    <button @click="isPaymentOpen = false" class="text-gray-400 hover:text-gray-600 font-bold">&times;</button>
                 </div>
 
                 <div class="space-y-2 text-xs border-b border-dashed border-gray-100 pb-4">
@@ -954,63 +1012,63 @@ $initProduct = $firstProduct ? [
                 </div>
 
                     <div x-show="paymentMethod === 'QRIS'" class="border border-gray-100 rounded-2xl p-5 bg-gray-50 text-center space-y-4">
-                        <div class="text-xs font-bold text-gray-700 uppercase tracking-wide">Scan QR Code KopiNusantara</div>
-                        
-                        <div class="w-44 h-44 bg-white p-2 border-2 border-gray-200 mx-auto rounded-xl shadow-inner flex items-center justify-center relative">
-                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=KopiNusantaraUMKM" alt="QRIS Barcode" class="w-full h-full object-contain">
-                        </div>
-                        
-                        <div class="space-y-1">
-                            <p class="text-xs text-gray-500">Mendukung: GoPay, OVO, Dana, LinkAja, BCA Mobile, dll.</p>
-                            <p class="text-[11px] text-red-500 font-medium">Lakukan screenshot atau scan barcode di atas sebelum menekan tombol konfirmasi.</p>
-                        </div>
+                       <div x-show="paymentMethod === 'QRIS'" class="border border-gray-100 rounded-2xl p-5 bg-gray-50 text-center space-y-4">
+                    <div class="text-xs font-bold text-gray-700 uppercase tracking-wide">Scan QR Code KopiNusantara</div>
+                    
+                    <div class="w-44 h-44 bg-white p-2 border-2 border-gray-200 mx-auto rounded-xl shadow-inner flex items-center justify-center relative">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=KopiNusantaraUMKM" alt="QRIS Barcode" class="w-full h-full object-contain">
                     </div>
-
-                    <div x-show="paymentMethod === 'Transfer'" class="border border-gray-100 rounded-2xl p-5 bg-gray-50 space-y-4">
-                        <label class="text-xs text-gray-500 font-bold uppercase tracking-wider block">Pilih Bank Transfer:</label>
-                        
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                            <button @click="selectedBank = 'BCA'" :class="selectedBank === 'BCA' ? 'border-[#c57d38] bg-[#c57d38]/5 font-bold text-[#c57d38]' : 'border-gray-200 bg-white text-gray-600'" type="button" class="p-2 border rounded-lg text-xs transition">BCA</button>
-                            <button @click="selectedBank = 'Mandiri'" :class="selectedBank === 'Mandiri' ? 'border-[#c57d38] bg-[#c57d38]/5 font-bold text-[#c57d38]' : 'border-gray-200 bg-white text-gray-600'" type="button" class="p-2 border rounded-lg text-xs transition">Mandiri</button>
-                            <button @click="selectedBank = 'BNI'" :class="selectedBank === 'BNI' ? 'border-[#c57d38] bg-[#c57d38]/5 font-bold text-[#c57d38]' : 'border-gray-200 bg-white text-gray-600'" type="button" class="p-2 border rounded-lg text-xs transition">BNI</button>
-                            <button @click="selectedBank = 'BRI'" :class="selectedBank === 'BRI' ? 'border-[#c57d38] bg-[#c57d38]/5 font-bold text-[#c57d38]' : 'border-gray-200 bg-white text-gray-600'" type="button" class="p-2 border rounded-lg text-xs transition">BRI</button>
-                        </div>
-
-                        <div class="bg-white border border-gray-100 p-4 rounded-xl mt-3 space-y-3">
-                            <div class="flex justify-between items-center text-xs">
-                                <span class="text-gray-400 font-medium">Bank Tujuan:</span>
-                                <span class="font-extrabold text-gray-800" x-text="selectedBank + ' Virtual Account'"></span>
-                            </div>
-                            <div class="flex justify-between items-center bg-gray-50 px-3 py-2.5 rounded-lg border border-gray-100">
-                                <span class="font-mono text-sm tracking-wider font-bold text-gray-700" 
-                                      x-text="selectedBank === 'BCA' ? '800113312511139' : (selectedBank === 'Mandiri' ? '700123312511139' : (selectedBank === 'BNI' ? '880233312511139' : '900143312511139'))"></span>
-                                <button @click="alert('Nomor Virtual Account berhasil disalin!')" type="button" class="text-xs text-[#c57d38] font-bold hover:underline">Salin</button>
-                            </div>
-                            <ul class="text-[11px] text-gray-400 list-disc list-inside space-y-0.5">
-                                <li>Bisa dibayarkan melalui Mobile Banking, Internet Banking, atau ATM.</li>
-                                <li>Transaksi diverifikasi otomatis dalam beberapa menit setelah transfer.</li>
-                            </ul>
-                        </div>
-                    </div>
-
-                    <div class="pt-2 border-t border-dashed border-gray-200">
-                        {{-- Bagian tombol yang tadinya error sekarang dipecah menggunakan struktur @auth Blade murni --}}
-                        @auth
-                            <button type="button" class="w-full bg-[#c57d38] text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-[#a66528] transition flex items-center justify-center gap-2"
-                                    :disabled="isLoading || !selectedId"
-                                    @click="isLoading = true; submitCheckout();">
-                                <span x-text="isLoading ? 'Memproses Pesanan...' : 'Saya Sudah Melakukan Pembayaran'"></span>
-                            </button>
-                        @else
-                            <a href="{{ route('login') }}" class="w-full bg-[#c57d38] text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-[#a66528] transition flex items-center justify-center gap-2 text-sm text-center">
-                                Silakan Login Terlebih Dahulu
-                            </a>
-                        @endauth
+                    
+                    <div class="space-y-1">
+                        <p class="text-xs text-gray-500">Mendukung: GoPay, OVO, Dana, LinkAja, BCA Mobile, dll.</p>
+                        <p class="text-[11px] text-red-500 font-medium">Lakukan screenshot atau scan barcode di atas sebelum menekan tombol konfirmasi.</p>
                     </div>
                 </div>
+
+                    <div x-show="paymentMethod === 'Transfer'" class="border border-gray-100 rounded-2xl p-5 bg-gray-50 space-y-4" x-cloak>
+                    <label class="text-xs text-gray-500 font-bold uppercase tracking-wider block">Pilih Bank Transfer:</label>
+                    
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <button @click="selectedBank = 'BCA'" :class="selectedBank === 'BCA' ? 'border-[#c57d38] bg-[#c57d38]/5 font-bold text-[#c57d38]' : 'border-gray-200 bg-white text-gray-600'" type="button" class="p-2 border rounded-lg text-xs transition">BCA</button>
+                        <button @click="selectedBank = 'Mandiri'" :class="selectedBank === 'Mandiri' ? 'border-[#c57d38] bg-[#c57d38]/5 font-bold text-[#c57d38]' : 'border-gray-200 bg-white text-gray-600'" type="button" class="p-2 border rounded-lg text-xs transition">Mandiri</button>
+                        <button @click="selectedBank = 'BNI'" :class="selectedBank === 'BNI' ? 'border-[#c57d38] bg-[#c57d38]/5 font-bold text-[#c57d38]' : 'border-gray-200 bg-white text-gray-600'" type="button" class="p-2 border rounded-lg text-xs transition">BNI</button>
+                        <button @click="selectedBank = 'BRI'" :class="selectedBank === 'BRI' ? 'border-[#c57d38] bg-[#c57d38]/5 font-bold text-[#c57d38]' : 'border-gray-200 bg-white text-gray-600'" type="button" class="p-2 border rounded-lg text-xs transition">BRI</button>
+                    </div>
+
+                        <div class="bg-white border border-gray-100 p-4 rounded-xl mt-3 space-y-3">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-gray-400 font-medium">Bank Tujuan:</span>
+                            <span class="font-extrabold text-gray-800" x-text="selectedBank + ' Virtual Account'"></span>
+                        </div>
+                        <div class="flex justify-between items-center bg-gray-50 px-3 py-2.5 rounded-lg border border-gray-100">
+                            <span class="font-mono text-sm tracking-wider font-bold text-gray-700" 
+                                  x-text="selectedBank === 'BCA' ? '800113312511139' : (selectedBank === 'Mandiri' ? '700123312511139' : (selectedBank === 'BNI' ? '880233312511139' : '900143312511139'))"></span>
+                            <button @click="alert('Nomor Virtual Account berhasil disalin!')" type="button" class="text-xs text-[#c57d38] font-bold hover:underline">Salin</button>
+                        </div>
+                        <ul class="text-[11px] text-gray-400 list-disc list-inside space-y-0.5">
+                            <li>Bisa dibayarkan melalui Mobile Banking, Internet Banking, atau ATM.</li>
+                            <li>Transaksi diverifikasi otomatis dalam beberapa menit setelah transfer.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                    <div class="pt-2 border-t border-dashed border-gray-200">
+                    @auth
+                        <button type="button" class="w-full bg-[#c57d38] text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-[#a66528] transition flex items-center justify-center gap-2"
+                                :disabled="isLoading || (isPaymentFromCart ? cartItems.length === 0 : !selectedId)"
+                                @click="isLoading = true; if(isPaymentFromCart) { document.getElementById('checkout-product-id').value = 'cart'; }; submitCheckout();">
+                            <span x-text="isLoading ? 'Memproses Pesanan...' : 'Saya Sudah Melakukan Pembayaran'"></span>
+                        </button>
+                    @else
+                        <a href="{{ route('login') }}" class="w-full bg-[#c57d38] text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-[#a66528] transition flex items-center justify-center gap-2 text-sm text-center">
+                            Silakan Login Terlebih Dahulu
+                        </a>
+                    @endauth
+                </div>
+
             </div>
         </div>
     </div>
+    </div>
 </body>
-
 </html>
