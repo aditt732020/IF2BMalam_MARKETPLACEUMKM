@@ -1191,7 +1191,86 @@ $initProduct = $firstProduct ? [
                             </div>
                         </div>
 
-                        <form x-show="order.status === 'pending'" :action="'/orders/' + order.id + '/cancel'" method="POST"
+                        <div x-show="order.status === 'pending'" class="mt-4 space-y-4">
+                            <div class="bg-amber-50 border border-amber-100 rounded-xl p-4">
+                                <p class="text-[10px] font-bold text-amber-700 uppercase tracking-wider mb-2">Detail Pembayaran</p>
+                                <div class="grid sm:grid-cols-2 gap-3 text-xs">
+                                    <div>
+                                        <p class="text-gray-500">Referensi Pembayaran</p>
+                                        <p class="font-bold text-gray-800 mt-0.5" x-text="order.payment_reference || '-'"></p>
+                                    </div>
+                                    <div>
+                                        <p class="text-gray-500">Total Tagihan</p>
+                                        <p class="font-bold text-[#c57d38] mt-0.5" x-text="'Rp ' + order.total_price.toLocaleString('id-ID')"></p>
+                                    </div>
+                                    <div>
+                                        <p class="text-gray-500">Metode</p>
+                                        <p class="font-semibold text-gray-800 mt-0.5" x-text="order.payment_method || 'QRIS'"></p>
+                                    </div>
+                                    <div>
+                                        <p class="text-gray-500">Status Verifikasi</p>
+                                        <p class="font-semibold mt-0.5"
+                                            :class="order.payment_rejection_reason ? 'text-red-600' : (order.is_awaiting_verification ? 'text-blue-600' : 'text-amber-600')"
+                                            x-text="order.payment_verification_label"></p>
+                                    </div>
+                                </div>
+
+                                <div class="mt-4 flex flex-col items-center" x-show="!order.has_payment_proof || order.payment_rejection_reason">
+                                    <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Scan QRIS untuk Bayar</p>
+                                    <div class="w-36 h-36 bg-white p-2 border border-gray-200 rounded-xl shadow-inner">
+                                        <img :src="order.qr_image_url" alt="QR Pembayaran" class="w-full h-full object-contain">
+                                    </div>
+                                    <p class="text-[10px] text-gray-400 mt-2 text-center">Bayar sesuai total tagihan, lalu upload bukti transfer/screenshot.</p>
+                                </div>
+                            </div>
+
+                            <div x-show="order.payment_rejection_reason" class="bg-red-50 border border-red-100 rounded-xl p-3 text-xs text-red-700">
+                                <p class="font-bold mb-1">Bukti pembayaran ditolak</p>
+                                <p x-text="order.payment_rejection_reason"></p>
+                            </div>
+
+                            <div x-show="order.is_awaiting_verification" class="bg-blue-50 border border-blue-100 rounded-xl p-4">
+                                <div class="flex items-start gap-3">
+                                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                                        <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-xs font-bold text-blue-800">Menunggu Verifikasi Admin</p>
+                                        <p class="text-[11px] text-blue-600 mt-0.5">Bukti pembayaran telah diunggah pada <span x-text="order.payment_proof_uploaded_at"></span>. Admin akan memverifikasi dalam 1x24 jam.</p>
+                                        <a :href="order.payment_proof_url" target="_blank" class="inline-block mt-2">
+                                            <img :src="order.payment_proof_url" alt="Bukti Pembayaran" class="h-24 rounded-lg border border-blue-200 object-cover">
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <form x-show="!order.is_awaiting_verification"
+                                :action="'/orders/' + order.id + '/payment-proof'"
+                                method="POST"
+                                enctype="multipart/form-data"
+                                class="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
+                                @csrf
+                                <div>
+                                    <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-2">
+                                        <span x-text="order.payment_rejection_reason ? 'Upload Ulang Bukti Pembayaran' : 'Upload Bukti Pembayaran'"></span>
+                                    </label>
+                                    <input type="file" name="payment_proof" accept="image/jpeg,image/jpg,image/png,image/webp" required
+                                        class="block w-full text-xs text-gray-600 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-[#c57d38]/10 file:text-[#c57d38] hover:file:bg-[#c57d38]/20">
+                                    <p class="text-[10px] text-gray-400 mt-1">Format JPG, PNG, atau WEBP. Maksimal 5 MB.</p>
+                                </div>
+                                <button type="submit"
+                                    class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 bg-[#c57d38] hover:bg-[#a66528] text-white text-xs font-bold px-4 py-2.5 rounded-xl transition">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                    </svg>
+                                    Kirim Bukti Pembayaran
+                                </button>
+                            </form>
+                        </div>
+
+                        <form x-show="order.status === 'pending' && !order.is_awaiting_verification" :action="'/orders/' + order.id + '/cancel'" method="POST"
                             onsubmit="return confirm('Apakah Anda yakin ingin membatalkan pesanan ini? Stok produk akan dikembalikan.')"
                             class="flex justify-end mt-4">
                             @csrf
@@ -1286,7 +1365,7 @@ $initProduct = $firstProduct ? [
                     
                     <div class="space-y-1">
                         <p class="text-xs text-gray-500">Mendukung: GoPay, OVO, Dana, LinkAja, BCA Mobile, dll.</p>
-                        <p class="text-[11px] text-red-500 font-medium">Lakukan screenshot atau scan barcode di atas sebelum menekan tombol konfirmasi.</p>
+                        <p class="text-[11px] text-red-500 font-medium">Setelah pesanan dibuat, lakukan pembayaran via QRIS lalu upload bukti di Pesanan Saya.</p>
                     </div>
                 </div>
 
@@ -1295,7 +1374,7 @@ $initProduct = $firstProduct ? [
                         <button type="button" class="w-full bg-[#c57d38] text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-[#a66528] transition flex items-center justify-center gap-2"
                                 :disabled="isLoading || (isPaymentFromCart ? selectedCartIds.length === 0 : !selectedId)"
                                 @click="isLoading = true; submitCheckout();">
-                            <span x-text="isLoading ? 'Memproses Pesanan...' : 'Saya Sudah Melakukan Pembayaran'"></span>
+                            <span x-text="isLoading ? 'Memproses Pesanan...' : 'Buat Pesanan'"></span>
                         </button>
                     @else
                         <a href="{{ route('login') }}" class="w-full bg-[#c57d38] text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-[#a66528] transition flex items-center justify-center gap-2 text-sm text-center">
