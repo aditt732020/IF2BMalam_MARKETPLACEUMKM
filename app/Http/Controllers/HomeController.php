@@ -9,6 +9,7 @@ use App\Models\Cart;
 use App\Models\ProductReview;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
@@ -215,6 +216,8 @@ class HomeController extends Controller
                 'status' => 'pending',
                 'payment_reference' => $paymentReference,
                 'qr_code' => $qrCodeData,
+                'payment_method' => $validated['payment_method'],
+                'payment_bank' => $validated['payment_bank'] ?? null,
             ]);
 
             $product->decrement('stock', $validated['quantity']);
@@ -222,7 +225,10 @@ class HomeController extends Controller
             Cart::where('user_id', auth()->id())->where('product_id', $product->id)->delete();
         });
 
-        return redirect()->route('home')->with('success', 'Pesanan berhasil dibuat! Silakan scan QR code untuk pembayaran.');
+        return redirect()->route('home', ['page' => 'orders'])->with(
+            'success',
+            'Pesanan berhasil dibuat! Silakan lakukan pembayaran lalu upload bukti di halaman Pesanan Saya.'
+        );
     }
 
     private function processCartCheckout(Request $request)
@@ -261,7 +267,7 @@ class HomeController extends Controller
 
         $itemCount = $carts->count();
 
-        DB::transaction(function () use ($carts) {
+        DB::transaction(function () use ($carts, $validated) {
             $isFirst = true;
 
             foreach ($carts as $cart) {
@@ -289,6 +295,8 @@ class HomeController extends Controller
                     'status' => 'pending',
                     'payment_reference' => $paymentReference,
                     'qr_code' => $qrCodeData,
+                    'payment_method' => $validated['payment_method'],
+                    'payment_bank' => $validated['payment_bank'] ?? null,
                 ]);
 
                 $product->decrement('stock', $cart->quantity);
@@ -296,9 +304,9 @@ class HomeController extends Controller
             }
         });
 
-        return redirect()->route('home')->with(
+        return redirect()->route('home', ['page' => 'orders'])->with(
             'success',
-            'Pesanan ' . $itemCount . ' produk berhasil dibuat! Silakan scan QR code untuk pembayaran.'
+            'Pesanan ' . $itemCount . ' produk berhasil dibuat! Silakan lakukan pembayaran lalu upload bukti di Pesanan Saya.'
         );
     }
 
@@ -319,11 +327,62 @@ class HomeController extends Controller
                 $order->product->increment('stock', $order->quantity);
             }
 
+            if ($order->payment_proof_path) {
+                Storage::disk('public')->delete($order->payment_proof_path);
+            }
+
             $order->update(['status' => 'cancelled']);
         });
 
         return redirect()->route('home', ['page' => 'orders'])
             ->with('success', 'Pesanan #' . $order->id . ' berhasil dibatalkan.');
+    }
+
+    public function uploadPaymentProof(Request $request, Order $order)
+    {
+        if ($order->buyer_id !== auth()->id()) {
+            abort(403);
+        }
+
+        if ($order->status !== 'pending') {
+            return redirect()->route('home', ['page' => 'orders'])->withErrors([
+                'payment' => 'Bukti pembayaran hanya dapat diunggah untuk pesanan yang masih menunggu pembayaran.',
+            ]);
+        }
+
+        if ($order->isAwaitingPaymentVerification()) {
+            return redirect()->route('home', ['page' => 'orders'])->withErrors([
+                'payment' => 'Bukti pembayaran sudah diunggah dan sedang menunggu verifikasi admin.',
+            ]);
+        }
+
+        $validated = $request->validate([
+            'payment_proof' => 'required|image|mimes:jpeg,jpg,png,webp|max:5120',
+        ], [
+            'payment_proof.required' => 'Silakan pilih file bukti pembayaran.',
+            'payment_proof.image' => 'File bukti harus berupa gambar.',
+            'payment_proof.mimes' => 'Format bukti pembayaran harus JPG, PNG, atau WEBP.',
+            'payment_proof.max' => 'Ukuran bukti pembayaran maksimal 5 MB.',
+        ]);
+
+        if ($order->payment_proof_path) {
+            Storage::disk('public')->delete($order->payment_proof_path);
+        }
+
+        $path = $request->file('payment_proof')->store('payment-proofs', 'public');
+
+        $order->update([
+            'payment_proof_path' => $path,
+            'payment_proof_uploaded_at' => now(),
+            'payment_rejection_reason' => null,
+            'payment_verified_at' => null,
+            'payment_verified_by' => null,
+        ]);
+
+        return redirect()->route('home', ['page' => 'orders'])->with(
+            'success',
+            'Bukti pembayaran pesanan #' . $order->id . ' berhasil diunggah. Menunggu verifikasi admin.'
+        );
     }
 
     public function validatePayment(Request $request)
@@ -339,25 +398,36 @@ class HomeController extends Controller
         if (!$order) {
             return response()->json([
                 'success' => false,
-                'message' => 'Referensi pembayaran tidak ditemukan.'
+                'message' => 'Referensi pembayaran tidak ditemukan.',
             ], 404);
         }
 
         if ($order->status !== 'pending') {
             return response()->json([
                 'success' => false,
-                'message' => 'Pesanan ini sudah diproses.'
+                'message' => 'Pesanan ini sudah diproses.',
             ], 400);
         }
 
-        // Update order status to paid
-        $order->update(['status' => 'paid']);
+        if (!$order->hasPaymentProof()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Upload bukti pembayaran terlebih dahulu di halaman Pesanan Saya.',
+            ], 422);
+        }
+
+        if ($order->payment_rejection_reason) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Bukti pembayaran ditolak. Silakan unggah bukti yang baru.',
+            ], 422);
+        }
 
         return response()->json([
             'success' => true,
-            'message' => 'Pembayaran berhasil diverifikasi!',
+            'message' => 'Bukti pembayaran terkirim. Menunggu verifikasi admin.',
             'order_id' => $order->id,
-            'new_status' => 'paid'
+            'verification_status' => 'awaiting_verification',
         ]);
     }
 
@@ -372,6 +442,8 @@ class HomeController extends Controller
             ->latest()
             ->get()
             ->map(function (Order $order) {
+                $qrData = $order->payment_reference ?? 'KopiNusantaraUMKM';
+
                 return [
                     'id' => $order->id,
                     'product_id' => $order->product_id,
@@ -383,7 +455,17 @@ class HomeController extends Controller
                     'status' => $order->status,
                     'status_label' => $order->status_label,
                     'payment_reference' => $order->payment_reference,
+                    'payment_method' => $order->payment_method,
                     'qr_code' => $order->qr_code,
+                    'qr_image_url' => 'https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=' . urlencode($qrData),
+                    'has_payment_proof' => $order->hasPaymentProof(),
+                    'payment_proof_url' => $order->payment_proof_path
+                        ? Storage::disk('public')->url($order->payment_proof_path)
+                        : null,
+                    'payment_proof_uploaded_at' => $order->payment_proof_uploaded_at?->format('d M Y, H:i'),
+                    'payment_verification_label' => $order->paymentVerificationLabel(),
+                    'is_awaiting_verification' => $order->isAwaitingPaymentVerification(),
+                    'payment_rejection_reason' => $order->payment_rejection_reason,
                     'created_at' => $order->created_at->format('d M Y, H:i'),
                     'created_at_human' => $order->created_at->diffForHumans(),
                 ];

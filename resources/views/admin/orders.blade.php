@@ -60,6 +60,59 @@
                         @endforeach
                     </select>
                 </div>
+
+                @if ($editOrder->payment_reference)
+                    <div class="md:col-span-2 rounded-xl border border-[#e7ddd2] bg-[#fdf9f4] p-4">
+                        <p class="mb-2 text-xs font-bold uppercase text-[#7a6050]">Informasi Pembayaran</p>
+                        <div class="grid gap-2 text-sm md:grid-cols-2">
+                            <p><span class="text-[#9a8070]">Referensi:</span> <span class="font-semibold">{{ $editOrder->payment_reference }}</span></p>
+                            <p><span class="text-[#9a8070]">Metode:</span> <span class="font-semibold">{{ $editOrder->payment_method ?? 'QRIS' }}</span></p>
+                            <p><span class="text-[#9a8070]">Status Bukti:</span>
+                                <span class="font-semibold">
+                                    @if ($editOrder->isAwaitingPaymentVerification())
+                                        Menunggu verifikasi
+                                    @elseif ($editOrder->payment_rejection_reason)
+                                        Ditolak
+                                    @elseif ($editOrder->payment_verified_at)
+                                        Terverifikasi
+                                    @elseif ($editOrder->hasPaymentProof())
+                                        Bukti terunggah
+                                    @else
+                                        Belum ada bukti
+                                    @endif
+                                </span>
+                            </p>
+                            @if ($editOrder->payment_proof_uploaded_at)
+                                <p><span class="text-[#9a8070]">Diunggah:</span> <span class="font-semibold">{{ $editOrder->payment_proof_uploaded_at->format('d M Y H:i') }}</span></p>
+                            @endif
+                        </div>
+                        @if ($editOrder->payment_rejection_reason)
+                            <p class="mt-2 text-xs text-red-600">Alasan penolakan: {{ $editOrder->payment_rejection_reason }}</p>
+                        @endif
+                        @if ($editOrder->payment_proof_path)
+                            <a href="{{ Storage::disk('public')->url($editOrder->payment_proof_path) }}" target="_blank" class="mt-3 inline-block">
+                                <img src="{{ Storage::disk('public')->url($editOrder->payment_proof_path) }}" alt="Bukti Pembayaran" class="h-32 rounded-lg border border-[#e0d8cc] object-cover">
+                            </a>
+                        @endif
+                        @if ($editOrder->isAwaitingPaymentVerification())
+                            <div class="mt-4 flex flex-wrap gap-2">
+                                <form method="POST" action="{{ route('admin.orders.verify-payment', $editOrder) }}">
+                                    @csrf
+                                    <button type="submit" class="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700"
+                                        onclick="return confirm('Verifikasi pembayaran pesanan ini?')">Verifikasi Pembayaran</button>
+                                </form>
+                                <button type="button" onclick="document.getElementById('reject-form').classList.toggle('hidden')"
+                                    class="rounded-xl border border-red-200 px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-50">Tolak Bukti</button>
+                            </div>
+                            <form id="reject-form" method="POST" action="{{ route('admin.orders.reject-payment', $editOrder) }}" class="mt-3 hidden space-y-2">
+                                @csrf
+                                <textarea name="payment_rejection_reason" rows="2" required placeholder="Alasan penolakan bukti pembayaran..."
+                                    class="w-full rounded-xl border border-[#e0d8cc] px-3 py-2 text-sm focus:border-[#c57d38] focus:outline-none"></textarea>
+                                <button type="submit" class="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white hover:bg-red-700">Kirim Penolakan</button>
+                            </form>
+                        @endif
+                    </div>
+                @endif
                 <div class="flex gap-2 md:col-span-2">
                     <button type="submit" class="rounded-xl bg-[#c57d38] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#a66528]">Simpan Perubahan</button>
                     <a href="{{ route('admin.orders', request()->only('status')) }}" class="rounded-xl border border-[#d8c7b8] px-5 py-2.5 text-sm font-semibold hover:bg-[#f5eee7]">Batal</a>
@@ -79,6 +132,7 @@
                         <th class="px-4 py-3 font-semibold">Qty</th>
                         <th class="px-4 py-3 font-semibold">Total</th>
                         <th class="px-4 py-3 font-semibold">Status</th>
+                        <th class="px-4 py-3 font-semibold">Bukti Bayar</th>
                         <th class="px-4 py-3 font-semibold">Tanggal</th>
                         <th class="px-4 py-3 font-semibold">Aksi</th>
                     </tr>
@@ -95,6 +149,17 @@
                             <td class="px-4 py-3">{{ $order->quantity }}</td>
                             <td class="px-4 py-3 font-bold text-[#c57d38]">Rp{{ number_format($order->total_price, 0, ',', '.') }}</td>
                             <td class="px-4 py-3">@include('admin.partials.status-badge', ['order' => $order])</td>
+                            <td class="px-4 py-3">
+                                @if ($order->isAwaitingPaymentVerification())
+                                    <span class="inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-bold text-blue-700">Menunggu verifikasi</span>
+                                @elseif ($order->payment_rejection_reason)
+                                    <span class="inline-flex rounded-full bg-red-50 px-2.5 py-1 text-[10px] font-bold text-red-700">Ditolak</span>
+                                @elseif ($order->hasPaymentProof())
+                                    <span class="inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">Sudah upload</span>
+                                @else
+                                    <span class="text-xs text-[#9a8070]">-</span>
+                                @endif
+                            </td>
                             <td class="px-4 py-3 text-xs text-[#9a8070]">{{ $order->created_at?->format('d M Y H:i') }}</td>
                             <td class="px-4 py-3">
                                 <div class="flex gap-2">
@@ -108,7 +173,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="px-6 py-12 text-center text-[#9a8070]">
+                            <td colspan="9" class="px-6 py-12 text-center text-[#9a8070]">
                                 @if (request('status'))
                                     Belum ada pesanan dengan status ini.
                                 @else

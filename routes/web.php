@@ -37,6 +37,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/checkout', [HomeController::class, 'processCheckout'])->name('checkout');
     Route::post('/profile', [HomeController::class, 'updateProfile'])->name('profile.update');
     Route::patch('/orders/{order}/cancel', [HomeController::class, 'cancelOrder'])->name('orders.cancel');
+    Route::post('/orders/{order}/payment-proof', [HomeController::class, 'uploadPaymentProof'])->name('orders.payment-proof');
     Route::post('/payment/validate', [HomeController::class, 'validatePayment'])->name('payment.validate');
 
     // --- TAMBAHKAN ROUTE ULASAN DI SINI (Di dalam middleware auth) ---
@@ -53,6 +54,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     Route::get('/orders', [OrderController::class, 'index'])->name('orders');
     Route::put('/orders/{order}', [OrderController::class, 'update'])->name('orders.update');
+    Route::post('/orders/{order}/verify-payment', [OrderController::class, 'verifyPayment'])->name('orders.verify-payment');
+    Route::post('/orders/{order}/reject-payment', [OrderController::class, 'rejectPayment'])->name('orders.reject-payment');
     Route::delete('/orders/{order}', [OrderController::class, 'destroy'])->name('orders.destroy');
 
     Route::get('/sellers', [SellerController::class, 'index'])->name('sellers');
