@@ -31,6 +31,7 @@ Route::middleware('auth')->group(function () {
     // Fitur Keranjang Nyata
     Route::post('/cart/add', [HomeController::class, 'addToCart'])->name('cart.add');
     Route::delete('/cart/remove/{id}', [HomeController::class, 'removeFromCart'])->name('cart.remove');
+    Route::patch('/cart/update/{id}', [HomeController::class, 'updateCartQuantity'])->name('cart.update');
     
     // Fitur Proses Checkout Terintegrasi
     Route::post('/checkout', [HomeController::class, 'processCheckout'])->name('checkout');

@@ -113,6 +113,29 @@ class HomeController extends Controller
         return redirect()->route('home')->with('success', 'Item berhasil dihapus dari keranjang.');
     }
 
+    // FUNGSI BARU: Update jumlah produk di keranjang
+    public function updateCartQuantity(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'quantity' => 'required|integer|min:1',
+        ]);
+
+        $cart = Cart::where('user_id', auth()->id())->where('id', $id)->first();
+
+        if (!$cart) {
+            return redirect()->route('home')->with('error', 'Item tidak ditemukan di keranjang.');
+        }
+
+        // Check stock availability
+        if ($validated['quantity'] > $cart->product->stock) {
+            return redirect()->route('home')->with('error', 'Stok tidak mencukupi.');
+        }
+
+        $cart->update(['quantity' => $validated['quantity']]);
+
+        return redirect()->route('home')->with('success', 'Jumlah produk berhasil diperbarui.');
+    }
+
     public function updateProfile(Request $request)
     {
         $user = auth()->user();
