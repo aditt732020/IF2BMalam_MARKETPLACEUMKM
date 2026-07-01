@@ -13,6 +13,8 @@ class Order extends Model
         'quantity',
         'total_price',
         'status',
+        'payment_reference',
+        'qr_code',
     ];
 
 

@@ -350,6 +350,11 @@ $initProduct = $firstProduct ? [
         <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{{ session('success') }}</div>
     </div>
     @endif
+    @if (session('error'))
+    <div class="max-w-7xl mx-auto px-6 pt-4">
+        <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ session('error') }}</div>
+    </div>
+    @endif
     @if (isset($errors) && $errors->any())
     <div class="max-w-7xl mx-auto px-6 pt-4">
         <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -753,7 +758,7 @@ $initProduct = $firstProduct ? [
                             class="flex-1 border-2 border-[#c57d38] text-[#c57d38] font-bold py-3.5 rounded-xl hover:bg-[#c57d38]/5 transition text-sm disabled:opacity-50">
                             + Tambah ke Keranjang
                         </button>
-                        <button @click="if (@js(auth()->check())) { if(selectedId) { isPaymentFromCart = false; isPaymentOpen = true; } } else { window.location.href = '{{ route('login') }}' }"
+                        <button @click="if (@js(auth()->check())) { if(selectedId) { if (!userProfile.alamat || !userProfile.telepon) { alert('Mohon isi alamat dan nomor telepon terlebih dahulu di halaman profil.'); page = 'profile'; return; } isPaymentFromCart = false; isPaymentOpen = true; } } else { window.location.href = '{{ route('login') }}' }"
                             :disabled="!selectedId"
                             class="flex-1 bg-[#c57d38] text-white font-bold py-3.5 rounded-xl hover:bg-[#a66528] transition shadow-md text-sm disabled:opacity-50">
                             Beli Sekarang
@@ -975,7 +980,30 @@ $initProduct = $firstProduct ? [
             </div>
 
         <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm space-y-4 lg:mt-9">
-            <h3 class="font-bold text-gray-800 text-base">Ringkasan Belanja</h3>
+            <h3 class="font-bold text-gray-800 text-base">Informasi Pengiriman</h3>
+            <div class="bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-2">
+                <div class="flex items-start gap-2">
+                    <svg class="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    <div>
+                        <p class="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Alamat Pengiriman</p>
+                        <p class="text-xs text-gray-700 mt-0.5" x-text="userProfile.alamat || 'Belum diisi'"></p>
+                    </div>
+                </div>
+                <div class="flex items-start gap-2">
+                    <svg class="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                    </svg>
+                    <div>
+                        <p class="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Nomor Telepon</p>
+                        <p class="text-xs text-gray-700 mt-0.5" x-text="userProfile.telepon || 'Belum diisi'"></p>
+                    </div>
+                </div>
+            </div>
+
+            <h3 class="font-bold text-gray-800 text-base pt-2">Ringkasan Belanja</h3>
             <div class="space-y-2 text-xs">
                 <div class="flex justify-between text-gray-500">
                     <span>Total Barang Dipilih</span>
@@ -997,6 +1025,11 @@ $initProduct = $firstProduct ? [
             </div>
             
              <button @click="if (selectedCartIds.length > 0) { 
+            if (!userProfile.alamat || !userProfile.telepon) {
+                alert('Mohon isi alamat dan nomor telepon terlebih dahulu di halaman profil.');
+                page = 'profile';
+                return;
+            }
             isPaymentFromCart = true; 
             paymentMethod = 'QRIS'; 
             selectedBank = 'BCA'; 
@@ -1102,39 +1135,6 @@ $initProduct = $firstProduct ? [
             <p class="text-sm text-gray-400">Pantau status pembayaran dan pengiriman pesanan Anda</p>
         </div>
 
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-            <div class="bg-white border border-gray-100 rounded-xl p-4 text-center">
-                <p class="text-2xl font-black text-[#c57d38]" x-text="orderStats.total"></p>
-                <p class="text-[11px] text-gray-500 font-medium mt-0.5">Total Pesanan</p>
-            </div>
-            <div class="bg-white border border-gray-100 rounded-xl p-4 text-center">
-                <p class="text-2xl font-black text-amber-600" x-text="orderStats.pending"></p>
-                <p class="text-[11px] text-gray-500 font-medium mt-0.5">Menunggu Verifikasi</p>
-            </div>
-            <div class="bg-white border border-gray-100 rounded-xl p-4 text-center">
-                <p class="text-2xl font-black text-indigo-600" x-text="orderStats.active"></p>
-                <p class="text-[11px] text-gray-500 font-medium mt-0.5">Diproses / Dikirim</p>
-            </div>
-            <div class="bg-white border border-gray-100 rounded-xl p-4 text-center">
-                <p class="text-2xl font-black text-emerald-600" x-text="orderStats.completed"></p>
-                <p class="text-[11px] text-gray-500 font-medium mt-0.5">Selesai</p>
-            </div>
-        </div>
-
-        <div class="flex flex-wrap gap-2 mb-6">
-            <button type="button" @click="orderStatusFilter = ''"
-                :class="!orderStatusFilter ? 'bg-[#c57d38] text-white border-[#c57d38]' : 'bg-white text-gray-600 border-gray-200 hover:border-[#c57d38]/40'"
-                class="px-4 py-2 rounded-full text-xs font-semibold border transition">
-                Semua
-            </button>
-            @foreach ($orderStatuses as $key => $label)
-            <button type="button" @click="orderStatusFilter = '{{ $key }}'"
-                :class="orderStatusFilter === '{{ $key }}' ? 'bg-[#c57d38] text-white border-[#c57d38]' : 'bg-white text-gray-600 border-gray-200 hover:border-[#c57d38]/40'"
-                class="px-4 py-2 rounded-full text-xs font-semibold border transition">
-                {{ $label }}
-            </button>
-            @endforeach
-        </div>
 
         <div class="space-y-4">
             <template x-for="order in filteredBuyerOrders" :key="order.id">
@@ -1264,20 +1264,13 @@ $initProduct = $firstProduct ? [
                 </div>
 
                 <div>
-                    <label class="text-xs text-gray-500 font-bold uppercase tracking-wider block mb-2">Pilih Metode Pembayaran</label>
-                    <div class="grid grid-cols-2 gap-3">
+                    <label class="text-xs text-gray-500 font-bold uppercase tracking-wider block mb-2">Metode Pembayaran</label>
+                    <div>
                         <label class="cursor-pointer">
                             <input type="radio" name="pay" value="QRIS" x-model="paymentMethod" class="hidden peer">
                             <div class="p-3 border rounded-xl flex flex-col items-center justify-center gap-1 peer-checked:border-[#c57d38] peer-checked:bg-[#c57d38]/5 transition">
                                 <span class="font-extrabold text-sm text-gray-800">QRIS</span>
                                 <span class="text-[10px] text-gray-400">E-Wallet / M-Banking</span>
-                            </div>
-                        </label>
-                        <label class="cursor-pointer">
-                            <input type="radio" name="pay" value="Transfer" x-model="paymentMethod" class="hidden peer">
-                            <div class="p-3 border rounded-xl flex flex-col items-center justify-center gap-1 peer-checked:border-[#c57d38] peer-checked:bg-[#c57d38]/5 transition">
-                                <span class="font-extrabold text-sm text-gray-800">Transfer Bank</span>
-                                <span class="text-[10px] text-gray-400">Virtual Account</span>
                             </div>
                         </label>
                     </div>
@@ -1294,33 +1287,6 @@ $initProduct = $firstProduct ? [
                     <div class="space-y-1">
                         <p class="text-xs text-gray-500">Mendukung: GoPay, OVO, Dana, LinkAja, BCA Mobile, dll.</p>
                         <p class="text-[11px] text-red-500 font-medium">Lakukan screenshot atau scan barcode di atas sebelum menekan tombol konfirmasi.</p>
-                    </div>
-                </div>
-
-                    <div x-show="paymentMethod === 'Transfer'" class="border border-gray-100 rounded-2xl p-5 bg-gray-50 space-y-4" x-cloak>
-                    <label class="text-xs text-gray-500 font-bold uppercase tracking-wider block">Pilih Bank Transfer:</label>
-                    
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        <button @click="selectedBank = 'BCA'" :class="selectedBank === 'BCA' ? 'border-[#c57d38] bg-[#c57d38]/5 font-bold text-[#c57d38]' : 'border-gray-200 bg-white text-gray-600'" type="button" class="p-2 border rounded-lg text-xs transition">BCA</button>
-                        <button @click="selectedBank = 'Mandiri'" :class="selectedBank === 'Mandiri' ? 'border-[#c57d38] bg-[#c57d38]/5 font-bold text-[#c57d38]' : 'border-gray-200 bg-white text-gray-600'" type="button" class="p-2 border rounded-lg text-xs transition">Mandiri</button>
-                        <button @click="selectedBank = 'BNI'" :class="selectedBank === 'BNI' ? 'border-[#c57d38] bg-[#c57d38]/5 font-bold text-[#c57d38]' : 'border-gray-200 bg-white text-gray-600'" type="button" class="p-2 border rounded-lg text-xs transition">BNI</button>
-                        <button @click="selectedBank = 'BRI'" :class="selectedBank === 'BRI' ? 'border-[#c57d38] bg-[#c57d38]/5 font-bold text-[#c57d38]' : 'border-gray-200 bg-white text-gray-600'" type="button" class="p-2 border rounded-lg text-xs transition">BRI</button>
-                    </div>
-
-                        <div class="bg-white border border-gray-100 p-4 rounded-xl mt-3 space-y-3">
-                        <div class="flex justify-between items-center text-xs">
-                            <span class="text-gray-400 font-medium">Bank Tujuan:</span>
-                            <span class="font-extrabold text-gray-800" x-text="selectedBank + ' Virtual Account'"></span>
-                        </div>
-                        <div class="flex justify-between items-center bg-gray-50 px-3 py-2.5 rounded-lg border border-gray-100">
-                            <span class="font-mono text-sm tracking-wider font-bold text-gray-700" 
-                                  x-text="selectedBank === 'BCA' ? '800113312511139' : (selectedBank === 'Mandiri' ? '700123312511139' : (selectedBank === 'BNI' ? '880233312511139' : '900143312511139'))"></span>
-                            <button @click="alert('Nomor Virtual Account berhasil disalin!')" type="button" class="text-xs text-[#c57d38] font-bold hover:underline">Salin</button>
-                        </div>
-                        <ul class="text-[11px] text-gray-400 list-disc list-inside space-y-0.5">
-                            <li>Bisa dibayarkan melalui Mobile Banking, Internet Banking, atau ATM.</li>
-                            <li>Transaksi diverifikasi otomatis dalam beberapa menit setelah transfer.</li>
-                        </ul>
                     </div>
                 </div>
 

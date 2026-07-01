@@ -36,6 +36,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/checkout', [HomeController::class, 'processCheckout'])->name('checkout');
     Route::post('/profile', [HomeController::class, 'updateProfile'])->name('profile.update');
     Route::patch('/orders/{order}/cancel', [HomeController::class, 'cancelOrder'])->name('orders.cancel');
+    Route::post('/payment/validate', [HomeController::class, 'validatePayment'])->name('payment.validate');
 
     // --- TAMBAHKAN ROUTE ULASAN DI SINI (Di dalam middleware auth) ---
     Route::post('/review/store', [ReviewController::class, 'store'])->name('review.store');

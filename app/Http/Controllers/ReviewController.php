@@ -19,7 +19,26 @@ class ReviewController extends Controller
             'comment'    => 'required|string|max:500',
         ]);
 
-        // 2. Simpan data ulasan ke dalam database
+        // 2. Cek apakah user sudah membeli dan membayar produk ini
+        $hasPurchased = \App\Models\Order::where('buyer_id', auth()->id())
+            ->where('product_id', $request->product_id)
+            ->whereIn('status', ['paid', 'shipped', 'completed'])
+            ->exists();
+
+        if (!$hasPurchased) {
+            return back()->with('error', 'Anda hanya bisa memberi ulasan untuk produk yang sudah Anda beli dan bayar.');
+        }
+
+        // 3. Cek apakah user sudah pernah memberi ulasan untuk produk ini
+        $alreadyReviewed = \App\Models\ProductReview::where('user_id', auth()->id())
+            ->where('product_id', $request->product_id)
+            ->exists();
+
+        if ($alreadyReviewed) {
+            return back()->with('error', 'Anda sudah pernah memberi ulasan untuk produk ini.');
+        }
+
+        // 4. Simpan data ulasan ke dalam database
         ProductReview::create([
             'product_id' => $request->product_id,
             'user_id'    => auth()->id(), // Mengambil ID User yang sedang login
@@ -27,7 +46,7 @@ class ReviewController extends Controller
             'comment'    => $request->comment,
         ]);
 
-        // 3. Kembali ke halaman produk dengan pesan sukses
+        // 5. Kembali ke halaman produk dengan pesan sukses
         return back()->with('success', 'Ulasan Anda berhasil ditambahkan!');
     }
 }

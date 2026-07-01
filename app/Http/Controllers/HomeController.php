@@ -169,15 +169,29 @@ class HomeController extends Controller
             ]);
         }
 
-        DB::transaction(function () use ($product, $validated) {
+        $order = null;
+        DB::transaction(function () use ($product, $validated, &$order) {
             $totalWithFees = ($product->price * $validated['quantity']) + 1000;
+            
+            // Generate unique payment reference
+            $paymentReference = 'PAY-' . strtoupper(uniqid()) . '-' . auth()->id();
+            
+            // Generate QR code data (unique per payment)
+            $qrCodeData = json_encode([
+                'ref' => $paymentReference,
+                'amount' => $totalWithFees,
+                'user_id' => auth()->id(),
+                'timestamp' => time()
+            ]);
 
-            Order::create([
+            $order = Order::create([
                 'buyer_id' => auth()->id(),
                 'product_id' => $product->id,
                 'quantity' => $validated['quantity'],
                 'total_price' => $totalWithFees,
                 'status' => 'pending',
+                'payment_reference' => $paymentReference,
+                'qr_code' => $qrCodeData,
             ]);
 
             $product->decrement('stock', $validated['quantity']);
@@ -185,7 +199,7 @@ class HomeController extends Controller
             Cart::where('user_id', auth()->id())->where('product_id', $product->id)->delete();
         });
 
-        return redirect()->route('home')->with('success', 'Pesanan berhasil dibuat! Admin akan memproses verifikasi sistem pembayaran ' . $validated['payment_method'] . ' Anda.');
+        return redirect()->route('home')->with('success', 'Pesanan berhasil dibuat! Silakan scan QR code untuk pembayaran.');
     }
 
     private function processCartCheckout(Request $request)
@@ -233,12 +247,25 @@ class HomeController extends Controller
                 $totalWithFees = $itemTotal + ($isFirst ? 1000 : 0);
                 $isFirst = false;
 
+                // Generate unique payment reference
+                $paymentReference = 'PAY-' . strtoupper(uniqid()) . '-' . auth()->id();
+                
+                // Generate QR code data (unique per payment)
+                $qrCodeData = json_encode([
+                    'ref' => $paymentReference,
+                    'amount' => $totalWithFees,
+                    'user_id' => auth()->id(),
+                    'timestamp' => time()
+                ]);
+
                 Order::create([
                     'buyer_id' => auth()->id(),
                     'product_id' => $product->id,
                     'quantity' => $cart->quantity,
                     'total_price' => $totalWithFees,
                     'status' => 'pending',
+                    'payment_reference' => $paymentReference,
+                    'qr_code' => $qrCodeData,
                 ]);
 
                 $product->decrement('stock', $cart->quantity);
@@ -248,7 +275,7 @@ class HomeController extends Controller
 
         return redirect()->route('home')->with(
             'success',
-            'Pesanan ' . $itemCount . ' produk berhasil dibuat! Admin akan memproses verifikasi sistem pembayaran ' . $validated['payment_method'] . ' Anda.'
+            'Pesanan ' . $itemCount . ' produk berhasil dibuat! Silakan scan QR code untuk pembayaran.'
         );
     }
 
@@ -276,6 +303,41 @@ class HomeController extends Controller
             ->with('success', 'Pesanan #' . $order->id . ' berhasil dibatalkan.');
     }
 
+    public function validatePayment(Request $request)
+    {
+        $validated = $request->validate([
+            'payment_reference' => 'required|string',
+        ]);
+
+        $order = Order::where('payment_reference', $validated['payment_reference'])
+            ->where('buyer_id', auth()->id())
+            ->first();
+
+        if (!$order) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Referensi pembayaran tidak ditemukan.'
+            ], 404);
+        }
+
+        if ($order->status !== 'pending') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pesanan ini sudah diproses.'
+            ], 400);
+        }
+
+        // Update order status to paid
+        $order->update(['status' => 'paid']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pembayaran berhasil diverifikasi!',
+            'order_id' => $order->id,
+            'new_status' => 'paid'
+        ]);
+    }
+
     private function formatBuyerOrders(): array
     {
         if (!auth()->check()) {
@@ -297,6 +359,8 @@ class HomeController extends Controller
                     'total_price' => (int) $order->total_price,
                     'status' => $order->status,
                     'status_label' => $order->status_label,
+                    'payment_reference' => $order->payment_reference,
+                    'qr_code' => $order->qr_code,
                     'created_at' => $order->created_at->format('d M Y, H:i'),
                     'created_at_human' => $order->created_at->diffForHumans(),
                 ];
