@@ -243,7 +243,7 @@ $initProduct = $firstProduct ? [
         {{-- SISI TENGAH: Menu Navigasi --}}
         <div class="hidden md:flex items-center gap-8 text-sm font-medium">
             <a href="#" @click.prevent="page = 'home'" :class="page === 'home' ? 'text-[#c57d38]' : 'text-gray-500 hover:text-gray-800'">Beranda</a>
-            <a href="#" @click.prevent="page = 'toko'" class="text-gray-500 hover:text-gray-800">Toko UMKM</a>
+            <a href="#" @click.prevent="page = 'toko'" class="text-gray-500 hover:text-gray-800">Produk UMKM</a>
             <a href="#" @click.prevent="page = 'tentang'" class="text-gray-500 hover:text-gray-800">Tentang Kami</a>
         </div>
 
